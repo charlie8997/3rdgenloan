@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="text-center text-lg-start mb-4">
+    <p class="text-uppercase text-primary fw-semibold small mb-1">Instant disbursement</p>
+    <h1 class="fw-bold mb-2">Withdrawal request</h1>
+    <p class="text-muted mb-0">Funds route to your verified bank within minutes once the request is approved.</p>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="p-3 rounded-4 border bg-white h-100 shadow-sm">
+        <p class="text-muted text-uppercase small mb-1">Approved amount</p>
+        <p class="h4 fw-bold mb-0">${{ approved_amount }}</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 rounded-4 border bg-white h-100 shadow-sm">
+        <p class="text-muted text-uppercase small mb-1">Already withdrawn</p>
+        <p class="h4 fw-bold text-warning mb-0">${{ approved_withdrawals_total }}</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 rounded-4 border bg-primary text-white h-100 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <p class="text-uppercase small mb-0">Available now</p>
+          <span class="badge bg-white text-primary">Ready</span>
+        </div>
+        <p class="display-6 fw-bold mb-1">${{ available_balance }}</p>
+        <span class="small text-white-50">Max you can request today</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-4 p-3 rounded-4 border bg-light">
+    <div class="d-flex align-items-center">
+      <div class="me-3 text-primary" style="font-size: 1.5rem;">⚡</div>
+      <div>
+        <p class="mb-1 fw-semibold">Fast-track processing</p>
+        <p class="mb-0 text-muted small">Requests submitted before 5pm local time settle the same business day.</p>
+      </div>
+    </div>
+  </div>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+      {{ form.non_field_errors|striptags }}
+    </div>
+  {% endif %}
+
+  <form id="withdrawal-form" method="post" novalidate>
+    {% csrf_token %}
+
+    <div class="mb-4">
+      <label for="{{ form.amount.id_for_label }}" class="form-label fw-semibold">Withdrawal amount</label>
+      <div class="input-group input-group-lg shadow-sm">
+        <span class="input-group-text bg-white border-end-0">$</span>
+        {{ form.amount }}
+        <span class="input-group-text bg-white text-muted border-start-0">USD</span>
+      </div>
+      <div class="d-flex justify-content-between flex-wrap text-muted small mt-2">
+        <span>Minimum $1.00 • Maximum matches your available balance.</span>
+        <span>Preview: <strong data-amount-preview>$0.00</strong></span>
+      </div>
+      {% if form.amount.errors %}
+        <div class="text-danger small mt-1">{{ form.amount.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-4">
+      <div class="d-flex justify-content-between align-items-center">
+        <label for="{{ form.note.id_for_label }}" class="form-label fw-semibold mb-0">Optional note</label>
+        <span class="text-muted small">Keeps ops in the loop</span>
+      </div>
+      {{ form.note }}
+      {% if form.note.errors %}
+        <div class="text-danger small mt-1">{{ form.note.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 py-3 fw-semibold" id="withdraw-submit-btn">
+      <span class="d-inline-flex align-items-center">
+        <span id="withdraw-btn-text">Submit request</span>
+        <span id="withdraw-spinner" class="spinner-border spinner-border-sm ms-2" style="display:none;" role="status" aria-hidden="true"></span>
+      </span>
+    </button>
+  </form>
+
+  <div class="mt-4 p-3 rounded-4 border bg-white shadow-sm">
+    <p class="fw-semibold mb-2">Payout guidelines</p>
+    <ul class="small text-muted mb-0 ps-3">
+      <li>Only one pending withdrawal is allowed at a time.</li>
+      <li>Large requests ($5k+) may require an identity confirmation call.</li>
+      <li>Need funds urgently? Note it above and we will prioritize.</li>
+    </ul>
+  </div>
+
+  <p class="text-center mt-4"><a class="fw-semibold" href="/loan/dashboard/">Back to dashboard</a></p>
+{% endblock %}
+
+{% block extra_scripts %}
+  {{ block.super }}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.getElementById('withdrawal-form');
+      const btn = document.getElementById('withdraw-submit-btn');
+      const spinner = document.getElementById('withdraw-spinner');
+      const btnText = document.getElementById('withdraw-btn-text');
+      const amountInput = document.getElementById('withdraw-amount-input');
+      const preview = document.querySelector('[data-amount-preview]');
+
+      if (amountInput && preview) {
+        const formatter = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+        const updatePreview = () => {
+          const raw = parseFloat(amountInput.value || 0);
+          preview.textContent = formatter.format(isNaN(raw) ? 0 : raw);
+        };
+        amountInput.addEventListener('input', updatePreview);
+        updatePreview();
+      }
+
+      if (form) {
+        form.addEventListener('submit', function () {
+          btn.disabled = true;
+          spinner.style.display = 'inline-block';
+          btnText.textContent = 'Submitting...';
+        });
+      }
+    });
+  </script>
+{% endblock %}

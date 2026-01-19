@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block extra_head %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/css/intlTelInput.css">
+  <style>
+    .iti--allow-dropdown {
+      width: 100%;
+    }
+    .iti__flag-container {
+      font-size: 0.9rem;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <h1 class="fw-bold mb-2">Get up to $168,600 today</h1>
+  <p class="text-muted mb-4">Same-day funding, 6-24 month terms, and transparent. Licensed Texas private lender.</p>
+
+  <div class="row g-2 mb-4">
+    <div class="col-6">
+      <div class="p-3 border rounded-4 text-center">
+        <div class="text-primary fw-bold">30 min</div>
+        <small class="text-muted">Average approval time</small>
+      </div>
+    </div>
+    <div class="col-6">
+      <div class="p-3 border rounded-4 text-center">
+        <div class="text-primary fw-bold">$4 / $100</div>
+        <small class="text-muted">Flat transparent fee</small>
+      </div>
+    </div>
+  </div>
+
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-danger fw-bold text-center" role="alert" style="font-size:1.1rem;">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" class="needs-validation" novalidate id="registration-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">{{ form.full_name.label }}</label>
+      {{ form.full_name }}
+      {% if form.full_name.errors %}
+        <div class="text-danger small">{{ form.full_name.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">{{ form.email.label }}</label>
+      {{ form.email }}
+      {% if form.email.errors %}
+        <div class="text-danger small">{{ form.email.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Mobile number</label>
+      {{ form.phone }}
+      <small class="text-muted">Tap the flag to pick your country code, then enter the rest of your number.</small>
+      {% if form.phone.errors %}
+        <div class="text-danger small">{{ form.phone.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">{{ form.password.label }}</label>
+      {{ form.password }}
+      {% if form.password.errors %}
+        <div class="text-danger small">{{ form.password.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">{{ form.confirm_password.label }}</label>
+      {{ form.confirm_password }}
+      {% if form.confirm_password.errors %}
+        <div class="text-danger small">{{ form.confirm_password.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 py-2">Create my account</button>
+  </form>
+
+  <p class="text-center mt-3 mb-0">Already onboard? <a href="/login/">Log in here</a></p>
+  <small class="text-muted d-block text-center">Licensed & regulated by the Texas OCCC. We are not a payday lender.</small>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/intlTelInput.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const phoneInput = document.querySelector('#phone-input');
+      if (!phoneInput) return;
+      const iti = window.intlTelInput(phoneInput, {
+        initialCountry: 'us',
+        preferredCountries: ['us', 'ca', 'mx', 'gb'],
+        separateDialCode: false,
+        autoPlaceholder: 'polite',
+      });
+
+      const form = document.getElementById('registration-form');
+      form.addEventListener('submit', function () {
+        if (iti.isValidNumber()) {
+          phoneInput.value = iti.getNumber();
+        }
+      });
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="mb-4">
+    <p class="text-uppercase small text-primary fw-semibold mb-1">Loan performance</p>
+    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+      <div>
+        <h1 class="fw-bold mb-2">Your installment line</h1>
+        <p class="text-muted mb-0">Monitor disbursements, track withdrawals, and stay ahead of repayments.</p>
+      </div>
+      {% if loan %}
+        <div class="badge rounded-pill px-4 py-2 {% if loan.status == 'APPROVED' or loan.status == 'ACTIVE' %}bg-success-subtle text-success{% elif loan.status == 'PENDING' %}bg-warning-subtle text-warning-emphasis{% else %}bg-secondary-subtle text-secondary{% endif %}">
+          Status: {{ loan.get_status_display }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if loan %}
+    <div class="mb-4 p-4 rounded-4 text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #0c5dff, #1a73ff); box-shadow: 0 24px 45px rgba(12, 93, 255, 0.25);">
+      <div class="d-flex flex-column flex-md-row justify-content-between gap-4 flex-wrap">
+        <div>
+          <p class="text-uppercase small text-white-50 mb-1">Approved amount</p>
+          <p class="display-4 fw-bold mb-0">$
+            {% if loan.status == 'APPROVED' or loan.status == 'ACTIVE' %}
+              {{ loan.approved_amount|default:0 }}
+            {% else %}
+              0.00
+            {% endif %}
+          </p>
+        </div>
+        <div class="d-flex gap-4 flex-wrap align-items-start">
+          <div>
+            <p class="text-uppercase small text-white-50 mb-1">Requested</p>
+            <p class="h4 mb-0">${{ loan.requested_amount }}</p>
+          </div>
+          <div>
+            <p class="text-uppercase small text-white-50 mb-1">Term length</p>
+            <p class="h4 mb-0">{{ loan.term_months }} months</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="p-4 border rounded-4 bg-white h-100 shadow-sm">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <p class="text-uppercase small text-muted mb-0">Available balance</p>
+            {% if balance is not None %}
+              <span class="badge bg-success-subtle text-success">Ready</span>
+            {% endif %}
+          </div>
+          <p class="display-6 fw-bold mb-1">${{ available_balance|default:0 }}</p>
+          <p class="text-muted small">Withdrawals already cleared: ${{ approved_withdrawals_total }}</p>
+          {% if balance is not None %}
+            <div class="d-grid gap-2 mt-3">
+              <a class="btn btn-primary btn-lg" href="/withdrawal/request/">Request withdrawal</a>
+            </div>
+          {% else %}
+            <p class="text-muted small mb-0">Balance visible once funds are approved.</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="p-4 border rounded-4 bg-light h-100">
+          <p class="text-uppercase small text-muted mb-2">Purpose</p>
+          <p class="h5 mb-2">{{ loan.loan_purpose }}</p>
+          {% if loan.note %}
+            <p class="text-muted small mb-3">{{ loan.note }}</p>
+          {% endif %}
+          <div class="alert alert-secondary mb-0">
+            Keep us posted if your plans change—updating the purpose can accelerate future approvals.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-4 p-4 border rounded-4 bg-white shadow-sm">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <p class="text-uppercase small text-muted mb-1">Withdrawal timeline</p>
+          <h4 class="mb-0">Recent activity</h4>
+        </div>
+        {% if withdrawal_requests %}
+          <a class="btn btn-outline-secondary btn-sm" href="/withdrawal/request/">New request</a>
+        {% endif %}
+      </div>
+      {% if withdrawal_requests %}
+        <div class="timeline">
+          {% for w in withdrawal_requests %}
+            <div class="timeline-item">
+              <div class="timeline-point {% if w.status == 'APPROVED' %}bg-success{% elif w.status == 'PENDING' %}bg-warning{% else %}bg-secondary{% endif %}"></div>
+              <div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="fw-semibold">${{ w.amount }}</div>
+                    <small class="text-muted">{{ w.created_at|date:"M d, Y" }}</small>
+                  </div>
+                  <span class="badge {% if w.status == 'APPROVED' %}bg-success{% elif w.status == 'PENDING' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ w.get_status_display }}</span>
+                </div>
+                {% if w.note %}
+                  <p class="small text-muted mb-0">{{ w.note }}</p>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted mb-0">No withdrawals yet. Tap “Request withdrawal” to move funds instantly.</p>
+      {% endif %}
+    </div>
+
+    {% if loan.status == 'PENDING' %}
+      <div class="alert alert-info mb-0">
+        <strong>In review.</strong> Decisions average 30 minutes during business hours. We will email and text you once complete.
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="p-4 border rounded-4 bg-white text-center shadow-sm">
+      <p class="h5 fw-semibold">You have no active installment line.</p>
+      <p class="text-muted">Apply in minutes to unlock up to $168,600 today.</p>
+      <a class="btn btn-primary btn-lg" href="/loan/apply/">Start an application</a>
+    </div>
+  {% endif %}
+{% endblock %}
