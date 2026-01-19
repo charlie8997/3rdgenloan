@@ -3,6 +3,34 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 from .models import Loan, Profile, User, BankDetail, WithdrawalRequest
 
+
+class InviteEmailForm(forms.Form):
+    recipient_name = forms.CharField(
+        label='Recipient name',
+        max_length=120,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-lg',
+            'placeholder': 'Jane Borrower'
+        })
+    )
+    recipient_email = forms.EmailField(
+        label='Recipient email',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control form-control-lg',
+            'placeholder': 'jane@example.com'
+        })
+    )
+    personalized_note = forms.CharField(
+        label='Personal note',
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control form-control-lg',
+            'placeholder': 'Optional message that will appear in the email body.',
+            'rows': 3
+        })
+    )
+
+
 # Loan application form
 class LoanForm(forms.ModelForm):
     class Meta:

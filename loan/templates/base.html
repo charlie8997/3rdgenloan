@@ -133,6 +133,9 @@
                         <li class="nav-item"><a class="nav-link" href="/profile/complete/">Profile</a></li>
                         <li class="nav-item"><a class="nav-link" href="/bank-detail/">Bank</a></li>
                         <li class="nav-item"><a class="nav-link" href="/withdrawal/request/">Withdraw</a></li>
+                        {% if request.user.is_authenticated and request.user.is_staff %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'send_invite' %}">Invite</a></li>
+                        {% endif %}
                         <li class="nav-item"><a class="nav-link" href="/logout/">Logout</a></li>
                     </ul>
                 </div>

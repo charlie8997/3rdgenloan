@@ -10,4 +10,5 @@ urlpatterns = [
     path('loan/apply/', views.loan_application, name='loan_application'),
     path('loan/dashboard/', views.loan_dashboard, name='loan_dashboard'),
     path('withdrawal/request/', views.withdrawal_request, name='withdrawal_request'),
+    path('invite/', views.send_invite, name='send_invite'),
 ]

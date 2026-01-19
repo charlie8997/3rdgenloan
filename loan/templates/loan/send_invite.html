@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="text-center text-lg-start mb-4">
+    <p class="text-uppercase text-primary fw-semibold small mb-1">Invite borrowers</p>
+    <h1 class="fw-bold mb-2">Send a registration link</h1>
+    <p class="text-muted mb-0">We will email your contact with a secure hyperlink to the application portal.</p>
+  </div>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+      {{ form.non_field_errors|striptags }}
+    </div>
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="{{ form.recipient_name.id_for_label }}" class="form-label fw-semibold">Recipient name</label>
+      {{ form.recipient_name }}
+      {% if form.recipient_name.errors %}
+        <div class="text-danger small mt-1">{{ form.recipient_name.errors|striptags }}</div>
+      {% endif %}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.recipient_email.id_for_label }}" class="form-label fw-semibold">Recipient email</label>
+      {{ form.recipient_email }}
+      {% if form.recipient_email.errors %}
+        <div class="text-danger small mt-1">{{ form.recipient_email.errors|striptags }}</div>
+      {% endif %}
+    </div>
+    <div class="mb-4">
+      <label for="{{ form.personalized_note.id_for_label }}" class="form-label fw-semibold">Personal note <span class="text-muted small">(optional)</span></label>
+      {{ form.personalized_note }}
+      <div class="form-text">Add any context for underwriting or repayment expectations.</div>
+      {% if form.personalized_note.errors %}
+        <div class="text-danger small mt-1">{{ form.personalized_note.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 py-3 fw-semibold">Send invite</button>
+  </form>
+{% endblock %}

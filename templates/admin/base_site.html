@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% load static i18n %}
+
+{% block title %}{{ site_title|default:_('Loan System admin') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Loan System admin') }}</a></h1>
+{% endblock %}
+
+{% block nav-global %}
+<div class="global-nav-wrapper">
+  {{ block.super }}
+  <a class="invite-button" href="{% url 'send_invite' %}">Send invite</a>
+</div>
+<style>
+  .global-nav-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .invite-button {
+    background: #2563eb;
+    color: #fff !important;
+    border-radius: 999px;
+    padding: 6px 18px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .invite-button:hover {
+    background: #1d4ed8;
+  }
+</style>
+{% endblock %}

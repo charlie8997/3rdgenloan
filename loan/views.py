@@ -1,13 +1,28 @@
 
 from decimal import Decimal
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, authenticate, logout
-from django.db.models import Sum
-from .forms import LoanForm, ProfileForm, UserRegistrationForm, UserLoginForm, BankDetailForm, WithdrawalRequestForm
-from .models import Loan, BankDetail, Profile, User, WithdrawalRequest
+from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.core.mail import EmailMultiAlternatives
+from django.db.models import Sum
+from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
+from django.templatetags.static import static
+from django.urls import reverse
+
+from .forms import (
+	LoanForm,
+	ProfileForm,
+	UserRegistrationForm,
+	UserLoginForm,
+	BankDetailForm,
+	WithdrawalRequestForm,
+	InviteEmailForm,
+)
+from .models import Loan, BankDetail, Profile, User, WithdrawalRequest
 
 @login_required
 def loan_dashboard(request):
@@ -167,3 +182,41 @@ def withdrawal_request(request):
 			'approved_withdrawals_total': approved_withdrawals_total,
 		},
 	)
+
+
+@login_required
+def send_invite(request):
+	if not request.user.is_staff:
+		raise PermissionDenied('Only administrators can send invitations.')
+
+	if request.method == 'POST':
+		form = InviteEmailForm(request.POST)
+		if form.is_valid():
+			recipient_name = form.cleaned_data['recipient_name']
+			recipient_email = form.cleaned_data['recipient_email']
+			note = form.cleaned_data['personalized_note']
+			register_url = request.build_absolute_uri(reverse('register'))
+			inviter_name = getattr(request.user, 'full_name', '') or request.user.email
+			from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', request.user.email)
+			banner_url = getattr(settings, 'INVITE_BANNER_URL', None) or request.build_absolute_uri(static('email_banner.jpg'))
+			organization_name = getattr(settings, 'ORG_DISPLAY_NAME', 'Loan System')
+			context = {
+				'inviter_name': inviter_name,
+				'recipient_name': recipient_name,
+				'personalized_note': note,
+				'register_url': register_url,
+				'organization_name': organization_name,
+				'banner_url': banner_url,
+			}
+			subject = f"{inviter_name} invited you to apply for financing"
+			text_body = render_to_string('email/register_invite.txt', context)
+			html_body = render_to_string('email/register_invite.html', context)
+			email = EmailMultiAlternatives(subject, text_body, from_email, [recipient_email])
+			email.attach_alternative(html_body, 'text/html')
+			email.send(fail_silently=False)
+			messages.success(request, f'Invite sent to {recipient_email}.')
+			return redirect('send_invite')
+	else:
+		form = InviteEmailForm()
+
+	return render(request, 'loan/send_invite.html', {'form': form})

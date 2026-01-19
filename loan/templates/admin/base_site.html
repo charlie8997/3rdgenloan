@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+{% load static i18n %}
+
+{% block title %}{{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Loan System Admin') }}</a></h1>
+{% endblock %}
+
+{% block nav-global %}
+<div class="header-invite-btn">
+  <a class="button" href="{% url 'send_invite' %}">Send Invite</a>
+</div>
+<style>
+  .header-invite-btn {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+  }
+  .header-invite-btn .button {
+    background: #2563eb;
+    color: #fff;
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .header-invite-btn .button:hover {
+    background: #1d4ed8;
+  }
+</style>
+{% endblock %}

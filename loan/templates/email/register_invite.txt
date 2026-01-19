@@ -1,0 +1,14 @@
+Loan Update
+
+Hi {{ recipient_name }},
+
+Good news—your application is approaching approval. The final step is identity verification so we can release funds securely.
+
+Complete verification here: {{ register_url }}
+
+{% if personalized_note %}Personal note from {{ inviter_name }}:
+{{ personalized_note }}
+
+{% endif %}Thank you for your cooperation.
+{{ inviter_name }}
+{{ organization_name }}
