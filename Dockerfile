@@ -1,3 +1,4 @@
+
 ARG PYTHON_VERSION=3.13-slim
 
 FROM python:${PYTHON_VERSION}
@@ -9,6 +10,9 @@ ENV PYTHONUNBUFFERED 1
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     gcc \
+    procps \
+    iproute2 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /code
@@ -26,7 +30,7 @@ COPY . /code
 # Use production settings when available; if not, manage.py will use default local settings.
 ENV DJANGO_SETTINGS_MODULE=core.settings.prod
 ENV STATIC_ROOT=/code/staticfiles
-RUN python manage.py collectstatic --noinput || true
+RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
