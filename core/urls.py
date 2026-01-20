@@ -25,3 +25,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('loan.urls')),
 ]
+
+# Custom error handlers
+handler404 = 'loan.views.custom_404'

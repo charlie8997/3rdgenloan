@@ -1,3 +1,5 @@
+# Production domain for email links
+PROD_DOMAIN = os.getenv('PROD_DOMAIN', '3rdgenloan.online')
 from .base import *
 
 # Production overrides

@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'home-pro.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+{% endblock %}
+{% block content_wrapper_start %}{% endblock %}
+{% block content_wrapper_end %}{% endblock %}
+{% block content %}
+<section class="hero-pro">
+  <video id="hero-video" src="/static/video.mp4" poster="/static/banner.jpeg" autoplay loop muted playsinline playsinline></video>
+  <div class="hero-overlay"></div>
+  <div class="hero-controls" role="group" aria-label="Hero video controls">
+    <button id="hero-video-toggle" aria-pressed="false" title="Pause background video">
+      <span class="visually-hidden">Pause background video</span>
+      <i class="bi bi-pause-fill"></i>
+    </button>
+    <button id="hero-sound-toggle" aria-pressed="true" title="Toggle sound (muted)">
+      <span class="visually-hidden">Toggle sound</span>
+      <i class="bi bi-volume-mute-fill"></i>
+    </button>
+    <div class="hero-radios d-flex align-items-center" style="gap:0.4rem; margin-left:0.5rem;">
+      <label class="radio-pill">
+        <input type="radio" name="playback-speed" value="0.75">
+        <span>0.75x</span>
+      </label>
+      <label class="radio-pill">
+        <input type="radio" name="playback-speed" value="1" checked>
+        <span>1x</span>
+      </label>
+      <label class="radio-pill">
+        <input type="radio" name="playback-speed" value="1.25">
+        <span>1.25x</span>
+      </label>
+    </div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-card">
+      <h1>Apply Online & Get Up to ₦168,600 Today!</h1>
+      <p class="hero-subtitle">Fast, transparent loans with flexible terms and clear pricing.</p>
+      <div class="d-flex flex-column flex-md-row align-items-center justify-content-center mb-3 gap-2">
+        <a href="/register/" class="cta-btn cta-btn-primary">Apply Now</a>
+        <a href="/login/" class="cta-btn cta-btn-outline">Sign In</a>
+      </div>
+      
+    </div>
+  </div>
+</section>
+
+<section class="features-pro py-4" aria-label="Key features">
+  <div class="feature-card-pro reveal" tabindex="0">
+    <div class="feature-visual">
+      <div class="feature-icon-pro"><i class="bi bi-cash-coin"></i></div>
+      <div class="feature-accent"></div>
+    </div>
+    <div class="feature-body">
+      <h5 class="feature-title">No Hidden Fees</h5>
+      <p class="feature-desc">Transparent pricing and clear repayment schedules so you always know what to expect.</p>
+      <a class="feature-cta" href="/contact/">Learn more</a>
+    </div>
+  </div>
+
+  <div class="feature-card-pro reveal" tabindex="0">
+    <div class="feature-visual">
+      <div class="feature-icon-pro"><i class="bi bi-sliders"></i></div>
+      <div class="feature-accent"></div>
+    </div>
+    <div class="feature-body">
+      <h5 class="feature-title">Flexible Terms</h5>
+      <p class="feature-desc">Choose repayment plans from 6 to 24 months and change course without penalties.</p>
+      <a class="feature-cta" href="/contact/">Learn more</a>
+    </div>
+  </div>
+
+  <div class="feature-card-pro reveal" tabindex="0">
+    <div class="feature-visual">
+      <div class="feature-icon-pro"><i class="bi bi-lightning"></i></div>
+      <div class="feature-accent"></div>
+    </div>
+    <div class="feature-body">
+      <h5 class="feature-title">Fast Approval</h5>
+      <p class="feature-desc">Applied online, decisions in minutes and funds the same day when approved.</p>
+      <a class="feature-cta" href="/contact/">Learn more</a>
+    </div>
+  </div>
+</section>
+{% block extra_scripts %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const video = document.getElementById('hero-video');
+      const toggle = document.getElementById('hero-video-toggle');
+      const sound = document.getElementById('hero-sound-toggle');
+
+      // Respect prefers-reduced-motion
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) {
+        if (video) video.pause();
+        if (toggle) toggle.setAttribute('aria-pressed', 'true');
+      }
+
+      // Mobile fallback: hide video to save bandwidth and show poster as background
+      function applyMobileFallback() {
+        const small = window.innerWidth < 640;
+        if (!video) return;
+        if (small) {
+          video.style.display = 'none';
+          // ensure poster covers area
+          if (!document.querySelector('.hero-poster')) {
+            const img = document.createElement('img');
+            img.src = video.getAttribute('poster') || '/static/banner.jpeg';
+            img.className = 'hero-poster position-absolute top-0 start-0';
+            img.setAttribute('alt', 'Hero');
+            img.style.zIndex = 0;
+            video.parentNode.insertBefore(img, video);
+          }
+        } else {
+          video.style.display = '';
+          const poster = document.querySelector('.hero-poster');
+          if (poster) poster.remove();
+        }
+      }
+
+      applyMobileFallback();
+      window.addEventListener('resize', applyMobileFallback);
+
+      // Ensure muted for autoplay and try to start playback when visible
+      if (video) {
+        video.muted = true;
+        const tryPlay = async () => {
+          try {
+            await video.play();
+            // remove any fallback poster image if present
+            const poster = document.querySelector('.hero-poster');
+            if (poster) poster.remove();
+            if (toggle) {
+              toggle.setAttribute('aria-pressed', 'false');
+              toggle.title = 'Pause background video';
+              toggle.innerHTML = '<i class="bi bi-pause-fill"></i>';
+            }
+          } catch (err) {
+            // Autoplay blocked by browser; leave poster visible
+            console.debug('Hero video autoplay blocked or failed:', err);
+          }
+        };
+        setTimeout(() => {
+          if (video.style.display !== 'none') tryPlay();
+        }, 180);
+      }
+
+      if (toggle && video) {
+        toggle.addEventListener('click', function () {
+          if (video.paused) {
+            video.play().catch(()=>{});
+            toggle.setAttribute('aria-pressed', 'false');
+            toggle.title = 'Pause background video';
+            toggle.innerHTML = '<i class="bi bi-pause-fill"></i>';
+          } else {
+            video.pause();
+            toggle.setAttribute('aria-pressed', 'true');
+            toggle.title = 'Play background video';
+            toggle.innerHTML = '<i class="bi bi-play-fill"></i>';
+          }
+        });
+      }
+
+      if (sound && video) {
+        sound.addEventListener('click', function () {
+          if (video.muted) {
+            video.muted = false;
+            sound.setAttribute('aria-pressed', 'false');
+            sound.title = 'Mute background video';
+            sound.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
+          } else {
+            video.muted = true;
+            sound.setAttribute('aria-pressed', 'true');
+            sound.title = 'Unmute background video';
+            sound.innerHTML = '<i class="bi bi-volume-mute-fill"></i>';
+          }
+        });
+      }
+
+      // Playback speed radios
+      const playbackRadios = document.querySelectorAll('input[name="playback-speed"]');
+      if (playbackRadios && video) {
+        playbackRadios.forEach(r => r.addEventListener('change', function (e) {
+          const v = parseFloat(e.target.value) || 1;
+          video.playbackRate = v;
+        }));
+        // set initial playbackRate from checked radio
+        const checked = document.querySelector('input[name="playback-speed"]:checked');
+        if (checked) video.playbackRate = parseFloat(checked.value) || 1;
+      }
+
+      // IntersectionObserver for reveal animations
+      if (!prefersReduced && 'IntersectionObserver' in window) {
+        const revealed = (el) => el.classList.add('revealed');
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              revealed(entry.target);
+              io.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.18 });
+        document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+      } else {
+        document.querySelectorAll('.reveal').forEach(el => el.classList.add('revealed'));
+      }
+    });
+  </script>
+{% endblock %}
+
+<!-- 'Why Choose 3rd Gen Loans?' section removed per request -->
+
+
+
+<section class="faq-section">
+  <div class="faq-grid">
+    <div class="faq-illustration">
+      <!-- simple inline SVG illustration -->
+      <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="g1" x1="0" x2="1">
+            <stop offset="0" stop-color="#1976d2" stop-opacity="0.95" />
+            <stop offset="1" stop-color="#00bcd4" stop-opacity="0.9" />
+          </linearGradient>
+        </defs>
+        <rect x="32" y="96" width="448" height="320" rx="28" fill="#f8fbff" stroke="#e6f0ff" />
+        <circle cx="132" cy="192" r="36" fill="url(#g1)" opacity="0.96" />
+        <rect x="190" y="160" width="240" height="22" rx="10" fill="#eaf6ff" />
+        <rect x="190" y="196" width="200" height="18" rx="9" fill="#f3fbff" />
+        <rect x="190" y="228" width="160" height="18" rx="9" fill="#f3fbff" />
+      </svg>
+    </div>
+    <div>
+      <div class="faq-intro">
+        <h3>Frequently Asked Questions</h3>
+        <p>Quick answers to help you understand how our loans work, timing, and what to expect.</p>
+      </div>
+      <div class="accordion" id="faqAccordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="faq1-heading">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="true" aria-controls="faq1">
+              What makes 3rd Gen Loans different from payday lenders?
+            </button>
+          </h2>
+          <div id="faq1" class="accordion-collapse collapse show" aria-labelledby="faq1-heading" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              We offer installment loans with transparent pricing, flexible terms, and credit reporting—designed for responsible borrowing and credit building.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="faq2-heading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false" aria-controls="faq2">
+              How fast can I get my loan?
+            </button>
+          </h2>
+          <div id="faq2" class="accordion-collapse collapse" aria-labelledby="faq2-heading" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Many applicants receive a decision within minutes. When approved, funds are typically available the same day.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="faq3-heading">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false" aria-controls="faq3">
+              Do you report to credit bureaus?
+            </button>
+          </h2>
+          <div id="faq3" class="accordion-collapse collapse" aria-labelledby="faq3-heading" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Yes — we report loan payments to major credit bureaus to help build or improve your credit when you repay responsibly.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+    <div class="contact-card">
+      <div class="contact-left">
+        <div class="contact-title">Get in touch — we’re here to help</div>
+        <div class="contact-sub">Have a question about eligibility, repayment, or an application? Our team is ready to assist.</div>
+        <div class="d-flex gap-2 mb-2">
+          <a href="/contact/" class="contact-btn primary">Contact page</a>
+          <a href="mailto:hello@3rdgenloan.online" class="contact-btn">Email us</a>
+        </div>
+        <div class="social-pills mt-2" aria-hidden="false">
+          <span class="social-icon" aria-hidden="true"><i class="bi bi-facebook"></i></span>
+          <span class="social-icon" aria-hidden="true"><i class="bi bi-linkedin"></i></span>
+          <span class="social-icon" aria-hidden="true"><i class="bi bi-yelp"></i></span>
+          <a class="social-icon whatsapp" href="https://wa.me/qr/XIXAYQEUKVS5G1" target="_blank" rel="noopener" aria-label="WhatsApp"> <i class="bi bi-whatsapp"></i></a>
+        </div>
+      </div>
+      <div class="contact-right">
+        <div style="text-align:right;">
+          <div class="fw-bold">Call us</div>
+          <a href="tel:+1234567890" class="contact-btn">+1 (548) 232-8817</a>
+        </div>
+        <div>
+          <label class="mb-1" for="newsletter-email">Stay updated</label>
+          <form action="#" method="post" onsubmit="event.preventDefault(); alert('Thanks — demo only');">
+            <div class="d-flex">
+              <input id="newsletter-email" class="form-control" placeholder="Your email" style="border-radius:0.5rem 0 0 0.5rem;"/>
+              <button class="contact-btn" style="border-radius:0 0.5rem 0.5rem 0;">Subscribe</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

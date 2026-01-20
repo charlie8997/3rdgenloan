@@ -1,3 +1,5 @@
+def home(request):
+	return render(request, 'loan/home.html')
 
 from decimal import Decimal
 
@@ -37,9 +39,14 @@ logger = logging.getLogger(__name__)
 def send_email_verification(user, request):
 	uid = urlsafe_base64_encode(force_bytes(user.pk))
 	token = default_token_generator.make_token(user)
-	verification_url = request.build_absolute_uri(
-		reverse('verify_email', args=[uid, token])
-	)
+	# Always use production domain in prod, fallback to request in dev
+	prod_domain = getattr(settings, 'PROD_DOMAIN', None)
+	if not settings.DEBUG and prod_domain:
+		verification_url = f"https://{prod_domain}{reverse('verify_email', args=[uid, token])}"
+	else:
+		verification_url = request.build_absolute_uri(
+			reverse('verify_email', args=[uid, token])
+		)
 	organization_name = getattr(settings, 'ORG_DISPLAY_NAME', '3rd Gen Loan')
 	banner_url = getattr(settings, 'INVITE_BANNER_URL', None) or request.build_absolute_uri(static('email_banner.jpg'))
 	context = {
@@ -313,3 +320,8 @@ def send_invite(request):
 		form = InviteEmailForm()
 
 	return render(request, 'loan/send_invite.html', {'form': form})
+
+
+def custom_404(request, exception):
+	"""Custom 404 handler that renders a branded 404 page."""
+	return render(request, 'loan/404.html', status=404)

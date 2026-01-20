@@ -99,10 +99,30 @@
       const phoneInput = document.querySelector('#phone-input');
       if (!phoneInput) return;
       const iti = window.intlTelInput(phoneInput, {
-        initialCountry: 'us',
-        preferredCountries: ['us', 'ca', 'mx', 'gb'],
+        initialCountry: 'ng',
+        preferredCountries: ['ng', 'us', 'gb', 'ca', 'za'],
         separateDialCode: false,
         autoPlaceholder: 'polite',
+      });
+
+      // Format phone number as user types
+      phoneInput.addEventListener('input', function () {
+        let countryData = iti.getSelectedCountryData();
+        let raw = phoneInput.value.replace(/\D/g, '');
+        let formatted = raw;
+        // Nigeria example: 714-2748-8899
+        if (countryData.iso2 === 'ng' && raw.length >= 10) {
+          formatted = raw.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+        }
+        // US/CA/GB: 555-123-4567
+        else if (["us","ca","gb"].includes(countryData.iso2) && raw.length >= 10) {
+          formatted = raw.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+        }
+        // South Africa: 082-123-4567
+        else if (countryData.iso2 === 'za' && raw.length >= 9) {
+          formatted = raw.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+        }
+        phoneInput.value = formatted;
       });
 
       const form = document.getElementById('registration-form');

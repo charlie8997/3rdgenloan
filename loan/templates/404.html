@@ -1,0 +1,29 @@
+{% load static %}
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-center py-5">
+  <div style="max-width:780px;margin:0 auto;">
+    <h1 class="display-4" style="font-weight:900;">404 — Page Not Found</h1>
+    <p class="lead text-muted">We couldn't find the page you're looking for. It may have been removed, had its name changed, or is temporarily unavailable.</p>
+
+    <div class="my-4">
+      <a href="{% url 'home' %}" class="btn btn-primary btn-cta-apply me-2">Return Home</a>
+      <a href="mailto:hello@3rdgenloan.online" class="btn btn-outline-secondary">Contact Support</a>
+    </div>
+
+    <div class="mt-5 card-panel" style="background:linear-gradient(180deg, rgba(25,118,210,0.04), rgba(0,188,212,0.03));">
+      <h3 class="h5">Quick search</h3>
+      <form class="d-flex mt-2" role="search" onsubmit="event.preventDefault();">
+        <input class="form-control me-2" placeholder="Search loans, help, FAQs..." aria-label="Search">
+        <button class="btn btn-outline-primary" type="submit">Search</button>
+      </form>
+      <p class="small text-muted mt-3">Or try visiting the dashboard or applying for a loan.</p>
+      <div class="mt-3 d-flex gap-2">
+        <a class="btn btn-sm btn-light" href="{% url 'loan_dashboard' %}">Dashboard</a>
+        <a class="btn btn-sm btn-light" href="{% url 'loan_application' %}">Apply</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
