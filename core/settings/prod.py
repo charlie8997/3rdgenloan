@@ -1,3 +1,5 @@
+import os
+
 # Production domain for email links
 PROD_DOMAIN = os.getenv('PROD_DOMAIN', '3rdgenloan.online')
 from .base import *
@@ -41,6 +43,10 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False').lower() == 'true'
 EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() == 'true'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
+
+# Use WhiteNoise's compressed manifest storage for production static files
+# (requires collectstatic to have been run during build).
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- Recommended Security Settings ---
 CSRF_COOKIE_SECURE = True

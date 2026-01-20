@@ -22,6 +22,13 @@ RUN set -ex && \
     rm -rf /root/.cache/
 COPY . /code
 
+# Collect static files at build time so admin and other assets are available in the image.
+# Use production settings when available; if not, manage.py will use default local settings.
+ENV DJANGO_SETTINGS_MODULE=core.settings.prod
+ENV STATIC_ROOT=/code/staticfiles
+RUN python manage.py collectstatic --noinput || true
+
 EXPOSE 8000
 
-CMD ["python","manage.py","runserver","0.0.0.0:8000"]
+# Use gunicorn in production; keep simple worker count
+CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

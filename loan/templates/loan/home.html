@@ -8,7 +8,10 @@
 {% block content_wrapper_end %}{% endblock %}
 {% block content %}
 <section class="hero-pro">
-  <video id="hero-video" src="/static/video.mp4" poster="/static/banner.jpeg" autoplay loop muted playsinline playsinline></video>
+  <video id="hero-video" poster="{% static 'banner.jpeg' %}" autoplay loop muted playsinline preload="auto">
+    <source src="{% static 'video.mp4' %}" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
   <div class="hero-overlay"></div>
   <div class="hero-controls" role="group" aria-label="Hero video controls">
     <button id="hero-video-toggle" aria-pressed="false" title="Pause background video">
@@ -21,11 +24,11 @@
     </button>
     <div class="hero-radios d-flex align-items-center" style="gap:0.4rem; margin-left:0.5rem;">
       <label class="radio-pill">
-        <input type="radio" name="playback-speed" value="0.75">
+        <input type="radio" name="playback-speed" value="0.75" checked>
         <span>0.75x</span>
       </label>
       <label class="radio-pill">
-        <input type="radio" name="playback-speed" value="1" checked>
+        <input type="radio" name="playback-speed" value="1">
         <span>1x</span>
       </label>
       <label class="radio-pill">
@@ -36,7 +39,7 @@
   </div>
   <div class="hero-content">
     <div class="hero-card">
-      <h1>Apply Online & Get Up to ₦168,600 Today!</h1>
+      <h1>Apply Online & Get Up to $168,600 Today!</h1>
       <p class="hero-subtitle">Fast, transparent loans with flexible terms and clear pricing.</p>
       <div class="d-flex flex-column flex-md-row align-items-center justify-content-center mb-3 gap-2">
         <a href="/register/" class="cta-btn cta-btn-primary">Apply Now</a>
@@ -98,26 +101,12 @@
         if (toggle) toggle.setAttribute('aria-pressed', 'true');
       }
 
-      // Mobile fallback: hide video to save bandwidth and show poster as background
+      // Mobile fallback removed: always show the video and remove any inserted poster.
       function applyMobileFallback() {
-        const small = window.innerWidth < 640;
         if (!video) return;
-        if (small) {
-          video.style.display = 'none';
-          // ensure poster covers area
-          if (!document.querySelector('.hero-poster')) {
-            const img = document.createElement('img');
-            img.src = video.getAttribute('poster') || '/static/banner.jpeg';
-            img.className = 'hero-poster position-absolute top-0 start-0';
-            img.setAttribute('alt', 'Hero');
-            img.style.zIndex = 0;
-            video.parentNode.insertBefore(img, video);
-          }
-        } else {
-          video.style.display = '';
-          const poster = document.querySelector('.hero-poster');
-          if (poster) poster.remove();
-        }
+        video.style.display = '';
+        const poster = document.querySelector('.hero-poster');
+        if (poster) poster.remove();
       }
 
       applyMobileFallback();
@@ -270,7 +259,7 @@
           </h2>
           <div id="faq3" class="accordion-collapse collapse" aria-labelledby="faq3-heading" data-bs-parent="#faqAccordion">
             <div class="accordion-body">
-              Yes — we report loan payments to major credit bureaus to help build or improve your credit when you repay responsibly.
+              Yes, we report loan payments to major credit bureaus to help build or improve your credit when you repay responsibly.
             </div>
           </div>
         </div>
@@ -283,7 +272,7 @@
   <div class="container">
     <div class="contact-card">
       <div class="contact-left">
-        <div class="contact-title">Get in touch — we’re here to help</div>
+        <div class="contact-title">Get in touch, we’re here to help</div>
         <div class="contact-sub">Have a question about eligibility, repayment, or an application? Our team is ready to assist.</div>
         <div class="d-flex gap-2 mb-2">
           <a href="/contact/" class="contact-btn primary">Contact page</a>
