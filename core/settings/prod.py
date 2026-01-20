@@ -30,14 +30,15 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECRET_KEY = os.getenv("SECRET_KEY", "changeme-insecure")
 
 
-# Email backend for production (Namecheap custom email)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'mail.3rdgenloan.online'
-EMAIL_PORT = 465
-EMAIL_HOST_USER = 'admin@3rdgenloan.online'
+# Email backend for production (all from environment/Fly secrets)
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 1025))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-EMAIL_USE_SSL = True
-DEFAULT_FROM_EMAIL = '3rd Gen Loan <admin@3rdgenloan.online>'
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False').lower() == 'true'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
 
 # --- Recommended Security Settings ---
 CSRF_COOKIE_SECURE = True
