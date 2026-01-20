@@ -124,3 +124,9 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+
+# Branding / marketing content
+ORG_DISPLAY_NAME = os.getenv('ORG_DISPLAY_NAME', '3rdgenloan')
+INVITE_SENDER_NAME = os.getenv('INVITE_SENDER_NAME', ORG_DISPLAY_NAME)
+INVITE_BANNER_URL = os.getenv('INVITE_BANNER_URL')

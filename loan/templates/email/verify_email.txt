@@ -1,0 +1,9 @@
+Verify your email for {{ organization_name }}
+
+Hi {{ user.full_name }},
+
+Please confirm this email address so we can finish setting up your 3rd Gen Loan portal access.
+
+Confirm email: {{ verification_url }}
+
+If you didn't request this, you can ignore the message - your account stays locked until it's confirmed.

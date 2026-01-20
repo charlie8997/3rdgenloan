@@ -1,17 +1,24 @@
 
 from decimal import Decimal
 
+import logging
+from smtplib import SMTPException
+
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import PermissionDenied
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 from .forms import (
 	LoanForm,
@@ -23,6 +30,40 @@ from .forms import (
 	InviteEmailForm,
 )
 from .models import Loan, BankDetail, Profile, User, WithdrawalRequest
+
+logger = logging.getLogger(__name__)
+
+
+def send_email_verification(user, request):
+	uid = urlsafe_base64_encode(force_bytes(user.pk))
+	token = default_token_generator.make_token(user)
+	verification_url = request.build_absolute_uri(
+		reverse('verify_email', args=[uid, token])
+	)
+	organization_name = getattr(settings, 'ORG_DISPLAY_NAME', '3rd Gen Loan')
+	banner_url = getattr(settings, 'INVITE_BANNER_URL', None) or request.build_absolute_uri(static('email_banner.jpg'))
+	context = {
+		'user': user,
+		'verification_url': verification_url,
+		'organization_name': organization_name,
+		'banner_url': banner_url,
+	}
+	subject = f'Confirm your email for {organization_name}'
+	text_body = render_to_string('email/verify_email.txt', context)
+	html_body = render_to_string('email/verify_email.html', context)
+	email = EmailMultiAlternatives(
+		subject,
+		text_body,
+		getattr(settings, 'DEFAULT_FROM_EMAIL', None) or user.email,
+		[user.email],
+	)
+	email.attach_alternative(html_body, 'text/html')
+	try:
+		email.send(fail_silently=False)
+	except (SMTPException, OSError) as exc:
+		logger.exception('Verification email failed: %s', exc)
+		return False
+	return True
 
 @login_required
 def loan_dashboard(request):
@@ -77,12 +118,39 @@ def register(request):
 	if request.method == 'POST':
 		form = UserRegistrationForm(request.POST)
 		if form.is_valid():
-			user = form.save()
-			login(request, user)
-			return redirect('profile_complete')
+			user = form.save(commit=False)
+			user.is_active = False
+			user.email_verified = False
+			user.email_verified_at = None
+			user.save()
+			if send_email_verification(user, request):
+				return render(request, 'loan/verify_email_sent.html', {'email': user.email})
+			messages.error(
+				request,
+				"We couldn't send the verification email. Please try again or contact support.",
+			)
 	else:
 		form = UserRegistrationForm()
 	return render(request, 'loan/register.html', {'form': form})
+
+
+def verify_email(request, uidb64, token):
+	UserModel = get_user_model()
+	try:
+		uid = force_str(urlsafe_base64_decode(uidb64))
+		user = UserModel.objects.get(pk=uid)
+	except (TypeError, ValueError, OverflowError, UserModel.DoesNotExist):
+		user = None
+	if user and default_token_generator.check_token(user, token):
+		if not user.email_verified:
+			user.email_verified = True
+			user.email_verified_at = timezone.now()
+			user.is_active = True
+			user.save(update_fields=['email_verified', 'email_verified_at', 'is_active'])
+		messages.success(request, 'Email verified. You can now sign in.')
+		return redirect('login')
+	messages.error(request, 'Verification link is invalid or has expired. Please request a new link or register again.')
+	return redirect('register')
 
 def user_login(request):
 	if request.method == 'POST':
@@ -196,10 +264,11 @@ def send_invite(request):
 			recipient_email = form.cleaned_data['recipient_email']
 			note = form.cleaned_data['personalized_note']
 			register_url = request.build_absolute_uri(reverse('register'))
-			inviter_name = getattr(request.user, 'full_name', '') or request.user.email
+			organization_name = getattr(settings, 'ORG_DISPLAY_NAME', '3rdgenloan')
+			default_inviter = getattr(settings, 'INVITE_SENDER_NAME', organization_name)
+			inviter_name = form.cleaned_data['inviter_name'].strip() or default_inviter
 			from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', request.user.email)
 			banner_url = getattr(settings, 'INVITE_BANNER_URL', None) or request.build_absolute_uri(static('email_banner.jpg'))
-			organization_name = getattr(settings, 'ORG_DISPLAY_NAME', 'Loan System')
 			context = {
 				'inviter_name': inviter_name,
 				'recipient_name': recipient_name,
@@ -208,14 +277,38 @@ def send_invite(request):
 				'organization_name': organization_name,
 				'banner_url': banner_url,
 			}
-			subject = f"{inviter_name} invited you to apply for financing"
+			subject = f"{organization_name} invited you to apply for financing"
 			text_body = render_to_string('email/register_invite.txt', context)
 			html_body = render_to_string('email/register_invite.html', context)
 			email = EmailMultiAlternatives(subject, text_body, from_email, [recipient_email])
 			email.attach_alternative(html_body, 'text/html')
-			email.send(fail_silently=False)
-			messages.success(request, f'Invite sent to {recipient_email}.')
-			return redirect('send_invite')
+			try:
+				email.send(fail_silently=False)
+			except (SMTPException, OSError) as exc:
+				logger.exception('Invite email failed: %s', exc)
+				console_backend_path = 'django.core.mail.backends.console.EmailBackend'
+				if settings.DEBUG:
+					active_backend = getattr(settings, 'EMAIL_BACKEND', '')
+					if active_backend != console_backend_path:
+						logger.info('Falling back to console email backend for invite preview.')
+						try:
+							email.connection = get_connection(console_backend_path)
+							email.send(fail_silently=False)
+						except Exception as console_exc:
+							logger.exception('Console email fallback failed: %s', console_exc)
+						else:
+							messages.warning(
+								request,
+								"SMTP is unreachable, so the invite was dumped to the Django console output instead.",
+							)
+							return redirect('send_invite')
+				messages.error(
+					request,
+					"We couldn't reach the email server. Please verify SMTP settings or try again later.",
+				)
+			else:
+				messages.success(request, f'Invite sent to {recipient_email}.')
+				return redirect('send_invite')
 	else:
 		form = InviteEmailForm()
 

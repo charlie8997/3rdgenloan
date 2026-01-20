@@ -18,7 +18,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from loan.views import send_invite
+
 urlpatterns = [
+    path('admin/invite/', send_invite, name='send_invite'),
     path('admin/', admin.site.urls),
     path('', include('loan.urls')),
 ]

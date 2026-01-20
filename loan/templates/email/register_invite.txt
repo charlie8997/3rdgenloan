@@ -1,14 +1,14 @@
-Loan Update
+Finish Your 3rd Gen Loan Application
 
 Hi {{ recipient_name }},
 
-Good news—your application is approaching approval. The final step is identity verification so we can release funds securely.
+Your financing file is staged for underwriting. Use your secure link to submit the requested documents. Once you submit the updated information, we'll push your application to approval.
 
-Complete verification here: {{ register_url }}
+Resume your application: {{ register_url }}
 
 {% if personalized_note %}Personal note from {{ inviter_name }}:
 {{ personalized_note }}
 
-{% endif %}Thank you for your cooperation.
-{{ inviter_name }}
+{% endif %}Need help? Reply to this email and our team will respond right away.
+{{ inviter_name }}, 
 {{ organization_name }}

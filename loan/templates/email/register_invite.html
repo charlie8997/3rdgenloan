@@ -17,22 +17,18 @@
             <tr>
               <td style="padding:32px;">
                 <p style="text-transform:uppercase; letter-spacing:1px; font-size:12px; color:#2563eb; margin:0 0 8px;">{{ organization_name }}</p>
-                <h1 style="margin:0 0 16px; font-size:28px; line-height:1.2;">We’re almost ready to approve your loan</h1>
+                <h1 style="margin:0 0 16px; font-size:28px; line-height:1.2;">Finish securing your loan</h1>
                 <p style="margin:0 0 16px; font-size:16px;">Hi {{ recipient_name }},</p>
-                <p style="margin:0 0 16px; font-size:16px; line-height:1.5;">Great news—your loan application is moving through our review queue. The final step is identity verification so we can release funds to you securely. Expect a follow-up shortly, or tap the button below to finish now.</p>
+                  <p style="margin:0 0 16px; font-size:16px; line-height:1.5;">Your financing file is staged for underwriting. Use your secure link to submit the requested documents. Once you submit the updated information, we'll push your application to approval.</p>
                 {% if personalized_note %}
                 <blockquote style="margin:0 0 20px; padding:16px 20px; background:#f1f5ff; border-left:4px solid #2563eb; font-style:italic; color:#0f172a;">{{ personalized_note }}</blockquote>
                 {% endif %}
                 <p style="margin:24px 0; text-align:center;">
-                  <a href="{{ register_url }}" style="display:inline-block; padding:14px 32px; background:#2563eb; color:#ffffff; text-decoration:none; border-radius:999px; font-weight:600;">Complete verification</a>
+                  <a href="{{ register_url }}" style="display:inline-block; padding:14px 32px; background:#2563eb; color:#ffffff; text-decoration:none; border-radius:999px; font-weight:600;">Resume your application</a>
                 </p>
-                <p style="margin:0 0 8px; font-size:14px; color:#475569;">If the button doesn’t work, copy this secure link:</p>
-                <p style="margin:0 0 24px; font-size:14px; word-break:break-all;">
-                  <a href="{{ register_url }}" style="color:#2563eb;">{{ register_url }}</a>
-                </p>
-                <p style="margin:0 0 4px; font-size:16px;">Thank you for your cooperation.</p>
-                <p style="margin:0 0 24px; font-size:16px;">{{ inviter_name }}<br />{{ organization_name }}</p>
-                <p style="margin:0; font-size:13px; color:#94a3b8;">Need help? Reply to this email and we’ll respond quickly.</p>
+                <p style="margin:0 0 16px; font-size:16px;">Need help? Reply to this email and our team will respond right away.</p>
+                <p style="margin:0 0 24px; font-size:16px;">{{ inviter_name }}, 
+                  {{ organization_name }}</p>
               </td>
             </tr>
           </table>

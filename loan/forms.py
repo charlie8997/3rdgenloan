@@ -1,10 +1,19 @@
 from django import forms
+from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 from .models import Loan, Profile, User, BankDetail, WithdrawalRequest
 
 
 class InviteEmailForm(forms.Form):
+    inviter_name = forms.CharField(
+        label='Sender name',
+        max_length=120,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-lg',
+            'placeholder': '3rd Gen Loan team'
+        })
+    )
     recipient_name = forms.CharField(
         label='Recipient name',
         max_length=120,
@@ -29,6 +38,16 @@ class InviteEmailForm(forms.Form):
             'rows': 3
         })
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        default_sender = getattr(
+            settings,
+            'INVITE_SENDER_NAME',
+            getattr(settings, 'ORG_DISPLAY_NAME', 'Loan System'),
+        )
+        if default_sender:
+            self.fields['inviter_name'].initial = default_sender
 
 
 # Loan application form
@@ -254,6 +273,11 @@ class UserLoginForm(AuthenticationForm):
             'placeholder': 'Your password'
         })
     )
+
+    def confirm_login_allowed(self, user):
+        if not getattr(user, 'email_verified', False):
+            raise ValidationError('Please verify your email before signing in.')
+        super().confirm_login_allowed(user)
 
 class BankDetailForm(forms.ModelForm):
     class Meta:
