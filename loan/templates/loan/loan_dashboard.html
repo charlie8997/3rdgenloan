@@ -1,5 +1,61 @@
 {% extends 'base.html' %}
+{% load humanize %}
 {% block content %}
+
+  <!-- Welcome greeting: full redesign 'WOW' card -->
+  <div class="mb-4">
+    <div class="position-relative overflow-hidden rounded-4 wow-card" role="region" aria-label="Welcome">
+      <style>
+        .wow-card { padding:1.25rem; background:linear-gradient(180deg,#ffffff 0%, #fbfdff 40%); border:1px solid rgba(15,23,42,0.04); box-shadow: 0 18px 45px rgba(12,93,255,0.08); }
+        .wow-inner { display:flex; gap:1rem; align-items:center; flex-wrap:wrap; }
+        .wow-avatar { width:80px; height:80px; min-width:80px; border-radius:14px; background:linear-gradient(135deg,#eef6ff,#e6f0ff); display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(12,93,255,0.06); }
+        .wow-heading { margin:0; line-height:1; display:flex; gap:.5rem; align-items:baseline; }
+        .wow-hello { color:#0f1724; font-weight:700; }
+        .wow-name { background:linear-gradient(90deg,#0c5dff,#1a73ff); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; font-weight:800; }
+        .wow-meta { color:#6b7280; margin-top:.35rem; }
+        .wow-accent { position:absolute; right:-40px; top:-30px; width:180px; height:180px; background: radial-gradient(circle at 20% 20%, rgba(12,93,255,0.12), rgba(26,115,255,0.04) 40%, transparent 60%); border-radius:50%; pointer-events:none; }
+        @media (max-width: 576px) {
+          .wow-card { padding:1rem; }
+          .wow-avatar { width:56px; height:56px; min-width:56px; border-radius:12px; }
+          .wow-name { font-size:1.15em; }
+          .wow-hello, .wow-name { font-size:1.15em; }
+          .wow-meta { margin-top:.4rem; }
+        }
+        @media (min-width: 577px) {
+          .wow-name { font-size:1.5rem; }
+          .wow-hello { font-size:1.5rem; }
+        }
+      </style>
+
+      <div class="wow-accent" aria-hidden="true"></div>
+
+      <div class="wow-inner">
+        <div class="wow-avatar" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none">
+            <path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z" fill="#0a2540" opacity="0.95"/>
+            <path d="M4 20c0-3.33 6.67-5 8-5s8 1.67 8 5v1H4v-1z" fill="#0a2540" opacity="0.06"/>
+          </svg>
+        </div>
+
+        <div style="flex:1 1 auto; min-width:0">
+          {% now "H" as hour %}
+          <h2 class="wow-heading" aria-hidden="false">
+            <span class="wow-hello">{% if hour < "12" %}Good morning{% elif hour < "18" %}Good afternoon{% else %}Good evening{% endif %},</span>
+            <span class="wow-name">{{ request.user.full_name|default:request.user.email }}</span>
+          </h2>
+          <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-sm-between">
+            <div>
+              <p class="wow-meta mb-0">Welcome back</p>
+            </div>
+            <div class="mt-2 mt-sm-0 text-sm-end">
+              <p class="wow-meta mb-0">{% if request.user.last_login %}Last login: {{ request.user.last_login|date:"M j, Y @ H:i" }}{% else %}—{% endif %}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="mb-4">
     <p class="text-uppercase small text-primary fw-semibold mb-1">Loan performance</p>
     <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
@@ -22,7 +78,7 @@
           <p class="text-uppercase small text-white-50 mb-1">Approved amount</p>
           <p class="display-4 fw-bold mb-0">$
             {% if loan.status == 'APPROVED' or loan.status == 'ACTIVE' %}
-              {{ loan.approved_amount|default:0 }}
+              {{ loan.approved_amount|default:0|floatformat:2|intcomma }}
             {% else %}
               0.00
             {% endif %}
@@ -31,7 +87,7 @@
         <div class="d-flex gap-4 flex-wrap align-items-start">
           <div>
             <p class="text-uppercase small text-white-50 mb-1">Requested</p>
-            <p class="h4 mb-0">${{ loan.requested_amount }}</p>
+            <p class="h4 mb-0">${{ loan.requested_amount|default:0|floatformat:2|intcomma }}</p>
           </div>
           <div>
             <p class="text-uppercase small text-white-50 mb-1">Term length</p>
@@ -50,8 +106,8 @@
               <span class="badge bg-success-subtle text-success">Ready</span>
             {% endif %}
           </div>
-          <p class="display-6 fw-bold mb-1">${{ available_balance|default:0 }}</p>
-          <p class="text-muted small">Withdrawals already cleared: ${{ approved_withdrawals_total }}</p>
+          <p class="display-6 fw-bold mb-1">${{ available_balance|default:0|floatformat:2|intcomma }}</p>
+          <p class="text-muted small">Withdrawals already cleared: ${{ approved_withdrawals_total|default:0|floatformat:2|intcomma }}</p>
           {% if balance is not None %}
             <div class="d-grid gap-2 mt-3">
               <a class="btn btn-primary btn-lg" href="/withdrawal/request/">Request withdrawal</a>
@@ -69,7 +125,7 @@
             <p class="text-muted small mb-3">{{ loan.note }}</p>
           {% endif %}
           <div class="alert alert-secondary mb-0">
-            Keep us posted if your plans change—updating the purpose can accelerate future approvals.
+            Keep us posted if your plans change, updating the purpose can accelerate future approvals.
           </div>
         </div>
       </div>
@@ -93,7 +149,7 @@
               <div>
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <div class="fw-semibold">${{ w.amount }}</div>
+                    <div class="fw-semibold">${{ w.amount|default:0|floatformat:2|intcomma }}</div>
                     <small class="text-muted">{{ w.created_at|date:"M d, Y" }}</small>
                   </div>
                   <span class="badge {% if w.status == 'APPROVED' %}bg-success{% elif w.status == 'PENDING' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ w.get_status_display }}</span>
@@ -116,10 +172,19 @@
       </div>
     {% endif %}
   {% else %}
-    <div class="p-4 border rounded-4 bg-white text-center shadow-sm">
-      <p class="h5 fw-semibold">You have no active installment line.</p>
-      <p class="text-muted">Apply in minutes to unlock up to $168,600 today.</p>
-      <a class="btn btn-primary btn-lg" href="/loan/apply/">Start an application</a>
+    <div class="p-5 rounded-4 bg-white text-center shadow-lg" style="border:1px solid rgba(15,23,42,0.04);">
+      <div class="mb-3 d-flex justify-content-center">
+        <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#e6f0ff,#eef8ff);display:flex;align-items:center;justify-content:center;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6 2 2 7 2 12s4 10 10 10 10-5 10-10S18 2 12 2z" fill="#e6f0ff"/>
+            <path d="M8 12h8M8 16h8M8 8h8" stroke="#1976d2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <h3 class="fw-bold mb-2">You have no active installment line.</h3>
+      <p class="text-muted mb-3">Apply in minutes to unlock up to $168,600 today.</p>
+      <a class="btn btn-cta-apply btn-lg px-5" href="/loan/apply/">Start an application</a>
+      <p class="text-muted small mt-3 mb-0">No impact to credit when checking eligibility. Funds can arrive same day.</p>
     </div>
   {% endif %}
 {% endblock %}

@@ -64,11 +64,8 @@ class LoanForm(forms.ModelForm):
                 'class': 'form-control form-control-lg',
                 'placeholder': 'What will the funds cover?'
             }),
-            'term_months': forms.NumberInput(attrs={
-                'class': 'form-control form-control-lg',
-                'placeholder': 'Repayment term in months',
-                'min': 6,
-                'max': 12
+            'term_months': forms.Select(choices=[(i, (f"{i} month" if i == 1 else f"{i} months")) for i in range(1, 13)], attrs={
+                'class': 'form-select form-select-lg',
             }),
             'monthly_income': forms.NumberInput(attrs={
                 'class': 'form-control form-control-lg',

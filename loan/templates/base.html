@@ -179,13 +179,18 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav ms-auto">
-                        <li class="nav-item"><a class="nav-link" href="{% url 'loan_dashboard' %}">Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'loan_application' %}">Apply</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'profile_complete' %}">Profile</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'bank_detail' %}">Bank</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'withdrawal_request' %}">Withdraw</a></li>
-                        <li class="nav-item d-none d-lg-block"><a class="nav-link btn-cta-apply" href="{% url 'loan_application' %}">Apply Now</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
+                        {% if user.is_authenticated %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'loan_dashboard' %}">Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'loan_application' %}">Apply</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'profile_complete' %}">Profile</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'bank_detail' %}">Bank</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'withdrawal_request' %}">Withdraw</a></li>
+                            <li class="nav-item d-none d-lg-block"><a class="nav-link btn-cta-apply" href="{% url 'loan_application' %}">Apply Now</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
+                        {% else %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Register</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Sign in</a></li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
@@ -211,6 +216,58 @@
                 });
             });
         </script>
+                <!-- Desktop-only blocking overlay: mobile-only site enforced (no continue) -->
+                <div id="desktop-warning" class="d-none" role="alert" aria-live="assertive">
+                    <div class="dw-backdrop" aria-hidden="true"></div>
+                    <div class="dw-panel" role="document">
+                        <h2 id="dw-title">Mobile only</h2>
+                        <p id="dw-desc">This site is available on mobile devices only. Please open this URL on your phone to continue.</p>
+                        <div class="mt-3 d-flex align-items-center gap-3">
+                            <div>
+                                <p class="small text-muted mb-1">Scan to open on your phone</p>
+                                <img id="dw-qr" alt="QR code to open on mobile" style="width:120px;height:120px;border-radius:8px;border:1px solid #eef2ff;" src="" />
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="small text-muted">If you don't have a phone, contact support for help accessing your account.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <style>
+                        #desktop-warning { position:fixed; inset:0; z-index:3000; display:flex; align-items:center; justify-content:center; }
+                        #desktop-warning .dw-backdrop { position:absolute; inset:0; background:rgba(7,12,20,0.65); backdrop-filter: blur(6px); }
+                        #desktop-warning .dw-panel { position:relative; z-index:1; background:#fff; padding:1.25rem; border-radius:12px; max-width:720px; width:92%; box-shadow:0 30px 80px rgba(2,6,23,0.28); }
+                        #desktop-warning .dw-panel h2 { margin:0 0 .25rem 0; font-size:1.35rem; }
+                        #desktop-warning .dw-panel p { margin:0; color:#6b7280; }
+                        @media (max-width:576px){ #desktop-warning { display:none !important; } }
+                        /* prevent interaction with page when shown */
+                        body.desktop-blocked *:not(#desktop-warning):not(#desktop-warning *) { pointer-events: none !important; }
+                    </style>
+                    <script>
+                        (function(){
+                            document.addEventListener('DOMContentLoaded', function(){
+                                try {
+                                    const minDesktop = 768; // widths >= this considered desktop
+                                    if (window.innerWidth < minDesktop) return; // mobile - do nothing
+
+                                    var root = document.getElementById('desktop-warning');
+                                    if (!root) return;
+                                    // show overlay and prevent page interaction
+                                    root.classList.remove('d-none');
+                                    document.documentElement.classList.add('desktop-blocked');
+                                    document.body.style.overflow = 'hidden';
+
+                                    // generate a QR code image that encodes the current URL (uses qrserver free API)
+                                    var qr = document.getElementById('dw-qr');
+                                    if (qr) {
+                                        var url = window.location.href;
+                                        var src = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(url);
+                                        qr.src = src;
+                                    }
+                                } catch (e){ console.warn('desktop block init failed', e); }
+                            });
+                        })();
+                    </script>
+                </div>
         {% block extra_scripts %}{% endblock %}
 </body>
 </html>

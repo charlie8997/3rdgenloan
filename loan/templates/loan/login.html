@@ -1,4 +1,22 @@
 {% extends 'base.html' %}
+{% block extra_head %}
+  <style>
+    .pwd-wrapper { position: relative; }
+    .pwd-toggle {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      padding: 4px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.6);
+    }
+    .pwd-toggle:focus { outline: none; }
+    .pwd-toggle svg { width: 18px; height: 18px; }
+  </style>
+{% endblock %}
 {% block content %}
   <div class="text-center mb-4">
     <h1 class="fw-bold">Welcome back</h1>
@@ -33,8 +51,61 @@
     <div class="text-end mb-3">
       <a class="small text-muted" href="#">Forgot password?</a>
     </div>
-    <button type="submit" class="btn btn-primary w-100 py-2">Log in</button>
+    <button type="submit" class="btn btn-primary w-100 py-2" aria-live="polite">
+      <span class="btn-text">Log in</span>
+      <span class="btn-spinner d-none">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Logging in...
+      </span>
+    </button>
   </form>
 
   <p class="text-center mt-4">New to Third Gen Loans? <a href="/register/">Create an account</a></p>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Add inline eye toggle to password input
+      const pwdInput = document.querySelector('form input[type=password]');
+      if (pwdInput && !pwdInput.closest('.pwd-wrapper')) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pwd-wrapper';
+        pwdInput.parentNode.insertBefore(wrapper, pwdInput);
+        wrapper.appendChild(pwdInput);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pwd-toggle';
+        btn.setAttribute('aria-label', 'Toggle password visibility');
+        btn.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>`;
+        btn.addEventListener('click', function () {
+          const isPwd = pwdInput.type === 'password';
+          pwdInput.type = isPwd ? 'text' : 'password';
+          btn.style.opacity = isPwd ? '0.8' : '0.6';
+          pwdInput.focus();
+        });
+        wrapper.appendChild(btn);
+      }
+
+      // Show loading spinner on submit
+      const form = document.querySelector('form');
+      if (form) {
+        form.addEventListener('submit', function () {
+          const submitBtn = form.querySelector('button[type=submit]');
+          if (submitBtn) {
+            submitBtn.setAttribute('disabled', 'disabled');
+            const text = submitBtn.querySelector('.btn-text');
+            const spinner = submitBtn.querySelector('.btn-spinner');
+            if (text) text.classList.add('d-none');
+            if (spinner) spinner.classList.remove('d-none');
+          }
+        });
+      }
+    });
+  </script>
 {% endblock %}

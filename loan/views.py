@@ -15,6 +15,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
+from django.db import transaction, IntegrityError
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
@@ -209,9 +210,26 @@ def bank_detail(request):
 	if request.method == 'POST':
 		form = BankDetailForm(request.POST, instance=bank_detail)
 		if form.is_valid():
-			bank_detail = form.save(commit=False)
-			bank_detail.user = request.user
-			bank_detail.save()
+			# Use atomic get-or-create/update flow to avoid duplicate inserts under race conditions.
+			data = form.cleaned_data
+			try:
+				with transaction.atomic():
+					try:
+						# Lock existing row if present and update
+						obj = BankDetail.objects.select_for_update().get(user=request.user)
+						for field, value in data.items():
+							setattr(obj, field, value)
+						obj.save()
+					except BankDetail.DoesNotExist:
+						# Create new record
+						obj = BankDetail.objects.create(user=request.user, **data)
+			except IntegrityError:
+				# Fallback: another process likely inserted concurrently — fetch and update
+				obj = BankDetail.objects.filter(user=request.user).first()
+				if obj:
+					for field, value in data.items():
+						setattr(obj, field, value)
+					obj.save()
 			return redirect('loan_dashboard')
 	else:
 		form = BankDetailForm(instance=bank_detail)

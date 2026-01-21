@@ -1,4 +1,5 @@
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
+from django.http import HttpResponse
 from django.urls import reverse
 from django.conf import settings
 import logging
@@ -7,6 +8,37 @@ import time
 
 logger = logging.getLogger(__name__)
 
+
+class MobileOnlyMiddleware:
+    """Block requests from non-mobile user agents and show a mobile-only page.
+
+    Skips static/media/admin paths so assets and admin remain reachable.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        path = request.path
+
+        static_url = getattr(settings, 'STATIC_URL', '/static/') or '/static/'
+        media_url = getattr(settings, 'MEDIA_URL', '/media/') or '/media/'
+        admin_url = getattr(settings, 'ADMIN_URL', '/admin/') or '/admin/'
+
+        # allow static/media/admin through
+        if path.startswith(static_url) or path.startswith(media_url) or path.startswith(admin_url):
+            return self.get_response(request)
+
+        ua = (request.META.get('HTTP_USER_AGENT') or '').lower()
+        mobile_indicators = ('mobile', 'android', 'iphone', 'ipad', 'ipod', 'opera mini', 'iemobile', 'windows phone', 'blackberry', 'webos')
+        is_mobile = any(ind in ua for ind in mobile_indicators)
+        if is_mobile:
+            return self.get_response(request)
+
+        # Non-mobile -> render blocking page (no bypass)
+        try:
+            return render(request, 'loan/desktop_block.html', {'url': request.build_absolute_uri()})
+        except Exception:
+            return HttpResponse('<h1>Mobile only</h1><p>Please open this URL on a phone to continue.</p>', status=403)
 
 class ProfileCompletionMiddleware:
     def __init__(self, get_response):

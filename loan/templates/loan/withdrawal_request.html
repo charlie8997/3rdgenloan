@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 {% block content %}
   <div class="text-center text-lg-start mb-4">
     <p class="text-uppercase text-primary fw-semibold small mb-1">Instant disbursement</p>
@@ -10,13 +11,13 @@
     <div class="col-md-4">
       <div class="p-3 rounded-4 border bg-white h-100 shadow-sm">
         <p class="text-muted text-uppercase small mb-1">Approved amount</p>
-        <p class="h4 fw-bold mb-0">${{ approved_amount }}</p>
+        <p class="h4 fw-bold mb-0">${{ approved_amount|default:0|floatformat:2|intcomma }}</p>
       </div>
     </div>
     <div class="col-md-4">
       <div class="p-3 rounded-4 border bg-white h-100 shadow-sm">
         <p class="text-muted text-uppercase small mb-1">Already withdrawn</p>
-        <p class="h4 fw-bold text-warning mb-0">${{ approved_withdrawals_total }}</p>
+        <p class="h4 fw-bold text-warning mb-0">${{ approved_withdrawals_total|default:0|floatformat:2|intcomma }}</p>
       </div>
     </div>
     <div class="col-md-4">
@@ -25,7 +26,7 @@
           <p class="text-uppercase small mb-0">Available now</p>
           <span class="badge bg-white text-primary">Ready</span>
         </div>
-        <p class="display-6 fw-bold mb-1">${{ available_balance }}</p>
+        <p class="display-6 fw-bold mb-1">${{ available_balance|default:0|floatformat:2|intcomma }}</p>
         <span class="small text-white-50">Max you can request today</span>
       </div>
     </div>

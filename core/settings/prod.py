@@ -41,7 +41,8 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
 # Use WhiteNoise's compressed storage (non-manifest) to avoid runtime manifest lookup errors.
 # This is intentionally conservative: switch to the manifest-backed storage once build
 # processes reliably produce staticfiles.json.
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- Security settings ---
 CSRF_COOKIE_SECURE = True

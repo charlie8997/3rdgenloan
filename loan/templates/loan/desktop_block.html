@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Mobile only</title>
+    <style>
+      html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+      .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px;background:#f8fafc}
+      .card{background:#fff;border-radius:12px;padding:24px;max-width:880px;width:100%;box-shadow:0 18px 50px rgba(2,6,23,0.12);}
+      h1{margin:0 0 8px 0;font-size:22px}
+      p{margin:0;color:#6b7280}
+      .cols{display:flex;gap:18px;align-items:center;margin-top:18px}
+      .qr{width:160px;height:160px;border-radius:12px;border:1px solid #eef2ff}
+      @media(max-width:600px){ .wrap{padding:12px} .cols{flex-direction:column;align-items:flex-start} }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>Mobile only</h1>
+        <p>This site is available on mobile devices only. Please open this URL on your phone to continue.</p>
+
+        <div class="cols">
+          <div>
+            <p class="small" style="margin-bottom:6px;color:#9ca3af">Scan to open on your phone</p>
+            <img class="qr" alt="QR code" id="qrimg" src="" />
+          </div>
+          <div style="flex:1">
+            <p style="margin-bottom:8px">Open this page on your mobile device to proceed. If you need assistance, contact support.</p>
+            <p style="font-size:12px;color:#9ca3af">URL: {{ url }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function(){
+        try{
+          var img = document.getElementById('qrimg');
+          if (img){
+            var src = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent('{{ url }}');
+            img.src = src;
+          }
+        }catch(e){/* no-op */}
+      })();
+    </script>
+  </body>
+</html>

@@ -8,6 +8,20 @@
     .iti__flag-container {
       font-size: 0.9rem;
     }
+    .pwd-wrapper { position: relative; }
+    .pwd-toggle {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      padding: 4px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.6);
+    }
+    .pwd-toggle:focus { outline: none; }
+    .pwd-toggle svg { width: 18px; height: 18px; }
   </style>
 {% endblock %}
 
@@ -84,7 +98,13 @@
       {% endif %}
     </div>
 
-    <button type="submit" class="btn btn-primary w-100 py-2">Create my account</button>
+    <button type="submit" class="btn btn-primary w-100 py-2" aria-live="polite">
+      <span class="btn-text">Create my account</span>
+      <span class="btn-spinner d-none">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Creating...
+      </span>
+    </button>
   </form>
 
   <p class="text-center mt-3 mb-0">Already onboard? <a href="/login/">Log in here</a></p>
@@ -99,8 +119,8 @@
       const phoneInput = document.querySelector('#phone-input');
       if (!phoneInput) return;
       const iti = window.intlTelInput(phoneInput, {
-        initialCountry: 'ng',
-        preferredCountries: ['ng', 'us', 'gb', 'ca', 'za'],
+        initialCountry: 'us',
+        preferredCountries: ['us','ng', 'gb', 'ca', 'za'],
         separateDialCode: false,
         autoPlaceholder: 'polite',
       });
@@ -126,11 +146,59 @@
       });
 
       const form = document.getElementById('registration-form');
-      form.addEventListener('submit', function () {
-        if (iti.isValidNumber()) {
-          phoneInput.value = iti.getNumber();
+      form.addEventListener('submit', function (e) {
+        // set international phone value if valid
+        try {
+          if (typeof iti !== 'undefined' && iti.isValidNumber()) {
+            phoneInput.value = iti.getNumber();
+          }
+        } catch (err) { /* ignore */ }
+
+        // show loading UI and prevent double-submit
+        const submitBtn = form.querySelector('button[type=submit]');
+        if (submitBtn) {
+          submitBtn.setAttribute('disabled', 'disabled');
+          const text = submitBtn.querySelector('.btn-text');
+          const spinner = submitBtn.querySelector('.btn-spinner');
+          if (text) text.classList.add('d-none');
+          if (spinner) spinner.classList.remove('d-none');
+          submitBtn.classList.add('disabled');
         }
       });
+
+      // Password show/hide toggle: inline eye icon at right-end
+      const addPasswordToggles = () => {
+        const pwdFields = Array.from(document.querySelectorAll('#registration-form input[type=password]'));
+        pwdFields.forEach((input) => {
+          // don't double-add
+          if (input.closest('.pwd-wrapper')) return;
+          const wrapper = document.createElement('div');
+          wrapper.className = 'pwd-wrapper';
+          input.parentNode.insertBefore(wrapper, input);
+          wrapper.appendChild(input);
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'pwd-toggle';
+          btn.setAttribute('aria-label', 'Toggle password visibility');
+          btn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>`;
+
+          btn.addEventListener('click', function () {
+            const isPwd = input.type === 'password';
+            input.type = isPwd ? 'text' : 'password';
+            // simple icon swap: use opacity to hint state
+            btn.style.opacity = isPwd ? '0.8' : '0.6';
+            input.focus();
+          });
+
+          wrapper.appendChild(btn);
+        });
+      };
+      addPasswordToggles();
     });
   </script>
 {% endblock %}
