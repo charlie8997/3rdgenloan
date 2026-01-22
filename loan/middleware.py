@@ -9,6 +9,18 @@ import time
 logger = logging.getLogger(__name__)
 
 
+class BlockFlyDevHostMiddleware:
+    """Block all requests to .fly.dev hostnames (no exceptions)."""
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        host = request.get_host().lower()
+        if host.endswith('.fly.dev'):
+            return HttpResponse('<h1>Forbidden</h1><p>Direct access via .fly.dev is not allowed.</p>', status=403)
+        return self.get_response(request)
+
+
 class MobileOnlyMiddleware:
     """Block requests from non-mobile user agents and show a mobile-only page.
 
