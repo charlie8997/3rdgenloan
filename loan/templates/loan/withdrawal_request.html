@@ -86,6 +86,28 @@
     </button>
   </form>
 
+  <!-- Confirmation modal (polished) -->
+  <div id="withdraw-confirm" class="withdraw-confirm-overlay" aria-hidden="true" style="display:none;">
+    <div class="withdraw-confirm-panel" role="dialog" aria-modal="true" aria-labelledby="wc-title">
+      <div class="withdraw-confirm-head d-flex align-items-center gap-3">
+        <div class="withdraw-confirm-badge">✓</div>
+        <div>
+          <h4 id="wc-title" class="mb-0">Confirm withdrawal request</h4>
+          <small class="text-muted">A quick confirmation before we send funds to your bank.</small>
+        </div>
+      </div>
+      <div class="withdraw-confirm-body mt-3">
+        <p class="mb-1 text-muted">You're requesting</p>
+        <p class="h3 fw-bold mb-2" id="wc-amount">$0.00</p>
+        <p id="wc-note" class="text-muted small mb-3"></p>
+      </div>
+      <div class="withdraw-confirm-actions d-flex gap-2 mt-2">
+        <button id="wc-confirm" class="btn btn-primary btn-lg flex-grow-1">Yes, submit request</button>
+        <button id="wc-cancel" class="btn btn-outline-secondary btn-lg">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div class="mt-4 p-3 rounded-4 border bg-white shadow-sm">
     <p class="fw-semibold mb-2">Payout guidelines</p>
     <ul class="small text-muted mb-0 ps-3">
@@ -124,13 +146,84 @@
         updatePreview();
       }
 
-      if (form) {
-        form.addEventListener('submit', function () {
+      // Confirmation modal elements
+      const wcOverlay = document.getElementById('withdraw-confirm');
+      const wcAmount = document.getElementById('wc-amount');
+      const wcNote = document.getElementById('wc-note');
+      const wcConfirm = document.getElementById('wc-confirm');
+      const wcCancel = document.getElementById('wc-cancel');
+
+      // Show confirmation modal instead of immediate submit, with a short prep delay
+      if (form && btn) {
+        form.addEventListener('submit', function (ev) {
+          // prevent default submit to show confirmation after a short delay
+          ev.preventDefault();
+          // micro-feedback: disable button and show inline loader text
           btn.disabled = true;
-          spinner.style.display = 'inline-block';
-          btnText.textContent = 'Submitting...';
+          const originalText = btnText.textContent;
+          btnText.textContent = 'Preparing...';
+          if (spinner) spinner.style.display = 'inline-block';
+
+          // after 2 seconds, show the modal with a smooth entrance
+          setTimeout(function () {
+            const raw = parseFloat(amountInput ? amountInput.value || 0 : 0);
+            const amountText = isNaN(raw) ? '$0.00' : new Intl.NumberFormat('en-US', {style:'currency',currency:'USD',minimumFractionDigits:2}).format(raw);
+            wcAmount.textContent = amountText;
+            const noteEl = document.getElementById('{{ form.note.id_for_label }}');
+            const noteText = noteEl ? noteEl.value : '';
+            wcNote.textContent = noteText ? noteText : '';
+
+            if (wcOverlay) {
+              wcOverlay.style.display = 'flex';
+              // force reflow for transition
+              void wcOverlay.offsetWidth;
+              wcOverlay.classList.add('show');
+              wcOverlay.setAttribute('aria-hidden','false');
+            }
+            if (wcConfirm) wcConfirm.focus();
+            // restore button base state while modal visible
+            if (spinner) spinner.style.display = 'none';
+            btnText.textContent = originalText;
+            btn.disabled = false;
+          }, 2000);
         });
+
+        // Confirm -> submit the form programmatically
+        if (wcConfirm) {
+          wcConfirm.addEventListener('click', function () {
+            // disable buttons and show spinner
+            btn.disabled = true;
+            if (spinner) spinner.style.display = 'inline-block';
+            if (btnText) btnText.textContent = 'Submitting...';
+            // hide overlay with exit animation
+            if (wcOverlay) { wcOverlay.classList.remove('show'); setTimeout(function(){ wcOverlay.style.display='none'; wcOverlay.setAttribute('aria-hidden','true'); }, 200); }
+            // submit
+            form.submit();
+          });
+        }
+
+        // Cancel -> close overlay and restore UI
+        if (wcCancel) {
+          wcCancel.addEventListener('click', function () {
+            if (wcOverlay) { wcOverlay.classList.remove('show'); setTimeout(function(){ wcOverlay.style.display='none'; wcOverlay.setAttribute('aria-hidden','true'); }, 200); }
+            btn.disabled = false;
+            if (spinner) spinner.style.display = 'none';
+            if (btnText) btnText.textContent = 'Submit request';
+          });
+        }
       }
     });
   </script>
+  <style>
+    /* Confirmation modal styling */
+    .withdraw-confirm-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.55);z-index:5000;opacity:0;transition:opacity .22s ease}
+    .withdraw-confirm-overlay.show{opacity:1}
+    .withdraw-confirm-panel{background:#fff;padding:22px;border-radius:14px;box-shadow:0 30px 60px rgba(2,6,23,0.25);max-width:520px;width:92%;transform:translateY(10px);opacity:0;transition:transform .22s cubic-bezier(.2,.9,.2,1),opacity .22s ease}
+    .withdraw-confirm-overlay.show .withdraw-confirm-panel{transform:translateY(0);opacity:1}
+    .withdraw-confirm-head{align-items:center}
+    .withdraw-confirm-badge{width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1982FF,#7AA2FF);color:#fff;font-weight:700;font-size:1.4rem;box-shadow:0 8px 20px rgba(25,130,255,0.18)}
+    .withdraw-confirm-body p.h3{letter-spacing: -0.5px}
+    .withdraw-confirm-actions .btn{padding:0.8rem 1rem}
+    @media (prefers-reduced-motion: no-preference){.withdraw-confirm-panel{will-change:transform,opacity}}
+  </style>
 {% endblock %}

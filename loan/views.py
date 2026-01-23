@@ -111,7 +111,15 @@ def loan_application(request):
 	if has_pending_or_active:
 		return render(request, 'loan/loan_already_exists.html')
 	if request.method == 'POST':
-		form = LoanForm(request.POST)
+		# Ensure monthly_income is provided: prefer posted value, otherwise use profile value
+		post_data = request.POST.copy()
+		if not post_data.get('monthly_income'):
+			# profile is required by precondition above
+			try:
+				post_data['monthly_income'] = str(request.user.profile.monthly_income)
+			except Exception:
+				post_data['monthly_income'] = ''
+		form = LoanForm(post_data)
 		if form.is_valid():
 			loan = form.save(commit=False)
 			loan.user = request.user
@@ -260,6 +268,8 @@ def withdrawal_request(request):
 				withdrawal.loan = loan
 				withdrawal.status = "PENDING"
 				withdrawal.save()
+				from django.contrib import messages
+				messages.success(request, 'Withdrawal request submitted — we received your request and will process it shortly.')
 				return redirect('loan_dashboard')
 	else:
 		form = WithdrawalRequestForm()

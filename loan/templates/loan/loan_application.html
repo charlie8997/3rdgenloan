@@ -20,38 +20,151 @@
     </div>
   </div>
 
-  <form method="post" novalidate onsubmit="showLoanAppSpinner(event)">
+  <style>
+    /* Fullscreen submit overlay */
+    .loan-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(7,12,20,0.6);z-index:4000;opacity:0;pointer-events:none;transition:opacity .18s ease}
+    .loan-overlay.show{opacity:1;pointer-events:auto}
+    .loan-overlay-panel{background:#fff;padding:22px 28px;border-radius:12px;box-shadow:0 20px 60px rgba(2,6,23,0.2);display:flex;flex-direction:column;align-items:center;gap:12px;min-width:260px}
+    .loan-spinner{width:58px;height:58px;border-radius:50%;position:relative}
+    .loan-spinner::before{content:'';box-sizing:border-box;position:absolute;inset:0;border-radius:50%;border:4px solid rgba(15,23,42,0.12);}
+    .loan-spinner::after{content:'';box-sizing:border-box;position:absolute;inset:4px;border-radius:50%;border:4px solid transparent;border-top-color:#0d6efd;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(1turn)}}
+    .loan-overlay p{margin:0;font-weight:600;color:#0f172a}
+    .loan-overlay small{color:#6b7280}
+    @media (prefers-reduced-motion: reduce){ .loan-spinner::after{animation:none} }
+  </style>
+
+  <form method="post" novalidate onsubmit="return showLoanAppSpinner(event)">
     {% csrf_token %}
     {{ form.non_field_errors }}
     {% for field in form %}
-      <div class="mb-3">
-        <label class="form-label fw-semibold">{{ field.label }}</label>
-        {{ field }}
-        {% if field.help_text %}
-          <div class="form-text">{{ field.help_text }}</div>
-        {% endif %}
-        {% if field.errors %}
-          <div class="text-danger small">{{ field.errors|striptags }}</div>
-        {% endif %}
-      </div>
+      {% if field.name == 'requested_amount' %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ field.label }}</label>
+          <div class="d-flex gap-2 mb-2 flex-wrap">
+            <button type="button" class="btn btn-outline-secondary btn-sm preset-amt" data-amt="500">$500</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm preset-amt" data-amt="1000">$1,000</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm preset-amt" data-amt="2500">$2,500</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm preset-amt" data-amt="5000">$5,000</button>
+          </div>
+          <div class="input-group">
+            <span class="input-group-text">USD</span>
+            <input id="requested-amount-display" type="text" class="form-control form-control-lg" inputmode="decimal" placeholder="e.g. 1,200.00" aria-describedby="loan-amt-help loan-amt-err">
+            <input id="requested-amount-hidden" name="requested_amount" type="hidden" />
+          </div>
+          <div id="loan-amt-help" class="form-text">Enter the amount you want to borrow. Min $100 - max $168,600.</div>
+          {% if field.errors %}
+            <div id="loan-amt-err" class="text-danger small">{{ field.errors|striptags }}</div>
+          {% else %}
+            <div id="loan-amt-err" class="text-danger small d-none"></div>
+          {% endif %}
+        </div>
+      {% elif field.name == 'monthly_income' %}
+        {# monthly income collected during profile; skip rendering here #}
+      {% else %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+            <div class="form-text">{{ field.help_text }}</div>
+          {% endif %}
+          {% if field.errors %}
+            <div class="text-danger small">{{ field.errors|striptags }}</div>
+          {% endif %}
+        </div>
+      {% endif %}
     {% endfor %}
     <button type="submit" class="btn btn-primary w-100 py-2" id="loan-app-submit-btn">
       <span id="loan-app-btn-text">Submit application</span>
       <span id="loan-app-spinner" class="spinner-border spinner-border-sm ms-2" style="display:none;" role="status" aria-hidden="true"></span>
     </button>
-  </form>
-
+  
   <script>
-    function showLoanAppSpinner(e) {
-      var btn = document.getElementById('loan-app-submit-btn');
-      var spinner = document.getElementById('loan-app-spinner');
-      var text = document.getElementById('loan-app-btn-text');
-      btn.disabled = true;
-      spinner.style.display = 'inline-block';
-      text.textContent = 'Submitting...';
-    }
+    (function(){
+      const PRESET_MIN = 100;
+      const PRESET_MAX = 168600;
+
+      function formatCurrency(value){
+        if (value === '' || value == null) return '';
+        const num = Number(value);
+        if (isNaN(num)) return '';
+        return num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      }
+      function parseCurrency(formatted){
+        if (!formatted) return NaN;
+        return Number(formatted.replace(/[^0-9.-]+/g, ''));
+      }
+
+      // removed monthly estimate display for requested amount (UI simplified)
+
+      document.addEventListener('DOMContentLoaded', function(){
+        const display = document.getElementById('requested-amount-display');
+        const hidden = document.getElementById('requested-amount-hidden');
+        const err = document.getElementById('loan-amt-err');
+        const presets = Array.from(document.querySelectorAll('.preset-amt'));
+        const termField = document.querySelector('select[name="term_months"]');
+
+        
+
+        if (termField){
+          termField.addEventListener('change', function(){ /* term changed - no monthly estimate displayed */ });
+        }
+
+        presets.forEach(function(btn){ btn.addEventListener('click', function(){ const a = Number(btn.dataset.amt)||0; display.value = formatCurrency(a); err.classList.add('d-none'); if (hidden) hidden.value = (Math.round(a * 100) / 100).toFixed(2); } ); });
+
+        if (display){
+          display.addEventListener('input', function(){ /* live: don't show monthly estimate */ });
+          display.addEventListener('blur', function(){ const v = parseCurrency(display.value); if (isNaN(v)){ display.value=''; err.textContent='Please enter a valid amount'; err.classList.remove('d-none'); if (hidden) hidden.value=''; return; } if (v < PRESET_MIN || v > PRESET_MAX){ err.textContent=`Amount must be between $${PRESET_MIN.toLocaleString()} and $${PRESET_MAX.toLocaleString()}`; err.classList.remove('d-none'); if (hidden) hidden.value=''; return; } err.classList.add('d-none'); display.value = formatCurrency(v); if (hidden) hidden.value = (Math.round(v * 100) / 100).toFixed(2); });
+        }
+
+        
+
+      });
+
+      window.showLoanAppSpinner = function(e){
+        const display = document.getElementById('requested-amount-display');
+        const hidden = document.getElementById('requested-amount-hidden');
+        const err = document.getElementById('loan-amt-err');
+        if (display){
+          const v = parseCurrency(display.value);
+          if (isNaN(v) || v < PRESET_MIN || v > PRESET_MAX){
+            e.preventDefault();
+            err.textContent = `Please enter an amount between $${PRESET_MIN.toLocaleString()} and $${PRESET_MAX.toLocaleString()}`;
+            err.classList.remove('d-none');
+            display.focus();
+            return false;
+          }
+          if (hidden) hidden.value = (Math.round(v * 100) / 100).toFixed(2);
+        }
+
+        
+
+        var btn = document.getElementById('loan-app-submit-btn');
+        var spinner = document.getElementById('loan-app-spinner');
+        var text = document.getElementById('loan-app-btn-text');
+        if (btn) btn.disabled = true;
+        if (spinner) spinner.style.display = 'inline-block';
+        if (text) text.textContent = 'Submitting...';
+        // show fullscreen overlay
+        try{
+          const overlay = document.getElementById('loan-overlay');
+          if (overlay){ overlay.classList.add('show'); overlay.setAttribute('aria-hidden','false'); }
+        }catch(_){/* ignore */}
+        return true;
+      };
+
+    })();
   </script>
   </form>
+
+  <!-- Fullscreen loading overlay shown on submit -->
+  <div id="loan-overlay" class="loan-overlay" aria-hidden="true">
+    <div class="loan-overlay-panel" role="status" aria-live="polite">
+      <div class="loan-spinner" aria-hidden="true"></div>
+      <p>Submitting your application</p>
+      <small>Please wait, this may take a moment.</small>
+    </div>
+  </div>
 
   <small class="text-muted d-block mt-3">Licensed by the Texas OCCC. Not a payday lender. Credit bureau reporting included with every installment loan.</small>
 {% endblock %}

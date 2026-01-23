@@ -82,6 +82,8 @@
       {% endif %}
     </div>
 
+    
+
     <div class="mb-3">
       <label class="form-label fw-semibold">{{ form.password.label }}</label>
       {{ form.password }}
@@ -130,16 +132,11 @@
         let countryData = iti.getSelectedCountryData();
         let raw = phoneInput.value.replace(/\D/g, '');
         let formatted = raw;
-        // Nigeria example: 714-2748-8899
         if (countryData.iso2 === 'ng' && raw.length >= 10) {
           formatted = raw.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-        }
-        // US/CA/GB: 555-123-4567
-        else if (["us","ca","gb"].includes(countryData.iso2) && raw.length >= 10) {
+        } else if (["us","ca","gb"].includes(countryData.iso2) && raw.length >= 10) {
           formatted = raw.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-        }
-        // South Africa: 082-123-4567
-        else if (countryData.iso2 === 'za' && raw.length >= 9) {
+        } else if (countryData.iso2 === 'za' && raw.length >= 9) {
           formatted = raw.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
         }
         phoneInput.value = formatted;
@@ -170,7 +167,6 @@
       const addPasswordToggles = () => {
         const pwdFields = Array.from(document.querySelectorAll('#registration-form input[type=password]'));
         pwdFields.forEach((input) => {
-          // don't double-add
           if (input.closest('.pwd-wrapper')) return;
           const wrapper = document.createElement('div');
           wrapper.className = 'pwd-wrapper';
@@ -190,7 +186,6 @@
           btn.addEventListener('click', function () {
             const isPwd = input.type === 'password';
             input.type = isPwd ? 'text' : 'password';
-            // simple icon swap: use opacity to hint state
             btn.style.opacity = isPwd ? '0.8' : '0.6';
             input.focus();
           });
