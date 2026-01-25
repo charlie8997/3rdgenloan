@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="text-center mb-4">
+    <h1 class="fw-bold">Agreement submitted</h1>
+    <p class="text-muted">Thank you, your agreement has been saved.</p>
+  </div>
+
+  <div class="card-panel text-center">
+    <p class="mb-1"><strong>Borrower:</strong> {{ agreement.borrower_name }}</p>
+    <p class="mb-1"><strong>Requested amount:</strong> ${{ agreement.requested_amount }}</p>
+    <p class="mb-1"><strong>Account (last4):</strong> ****{{ agreement.account_last4 }}</p>
+    <p class="mb-3"><strong>Signed at:</strong> {{ agreement.signed_at }}</p>
+
+    {% if agreement.signature_image %}
+      <div class="mb-3">
+        <img src="{{ agreement.signature_image.url }}" alt="Signature" style="max-width:320px;border:1px solid #eef2ff;padding:8px;border-radius:8px;"/>
+      </div>
+    {% elif agreement.signature_text %}
+      <div class="mb-3">
+        <p class="fst-italic">Signed (typed): {{ agreement.signature_text }}</p>
+      </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-center gap-2 mt-3">
+      <!-- <a class="btn btn-primary" href="{% url 'agreement_download' agreement.id %}">Download</a> -->
+      <a class="btn btn-outline-secondary" href="{% url 'loan_dashboard' %}">Back to dashboard</a>
+    </div>
+  </div>
+{% endblock %}

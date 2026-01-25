@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="text-center mb-4">
+    <h1 class="fw-bold">Loan Agreement</h1>
+    <p class="text-muted">Review and sign to confirm your application details.</p>
+  </div>
+
+  <div class="card-panel">
+    <h5 class="fw-semibold">Agreement details</h5>
+    <dl class="row">
+      <dt class="col-5">Borrower</dt><dd class="col-7">{{ borrower_name }}</dd>
+      <dt class="col-5">Requested amount</dt><dd class="col-7">${{ requested_amount }}</dd>
+      <dt class="col-5">Account</dt><dd class="col-7">****{{ account_last4 }}</dd>
+      <dt class="col-5">Date</dt><dd class="col-7">{{ now|date:"F j, Y, g:i a" }}</dd>
+    </dl>
+
+    <hr/>
+    <p class="text-muted small">Please sign below. You can draw your signature or type your full name as a fallback. This signature will be stored with the agreement record.</p>
+
+    <form id="agreement-form" method="post" novalidate>
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Draw signature</label>
+        <div style="border:1px solid #e9ecef;border-radius:8px;">
+          <div style="position:relative;">
+            <canvas id="sig-canvas" width="520" height="140" style="width:100%;height:140px;"></canvas>
+            <div id="sig-hint" style="position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;color:#9aa4b2;font-size:1rem;pointer-events:none;">Sign here</div>
+          </div>
+        </div>
+        <div class="mt-2 d-flex gap-2 align-items-center">
+          <button type="button" id="sig-undo" class="btn btn-outline-secondary btn-sm">Undo</button>
+          <button type="button" id="sig-clear" class="btn btn-outline-secondary btn-sm">Clear</button>
+          <button type="button" id="sig-fill" class="btn btn-outline-secondary btn-sm">Use typed name</button>
+          <label class="mb-0 small text-muted ms-2">Pen:</label>
+          <select id="sig-size" class="form-select form-select-sm ms-1" style="width:5.5rem;">
+            <option value="1">1px</option>
+            <option value="2" selected>2px</option>
+            <option value="3">3px</option>
+            <option value="4">4px</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fullscreen signing modal (hidden) -->
+      <div id="sig-fullscreen" style="display:none;position:fixed;inset:0;background:rgba(6,10,14,0.85);z-index:1050;padding:2rem;align-items:center;justify-content:center;"> 
+        <div style="max-width:900px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(2,6,23,0.6);">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;border-bottom:1px solid #eef2ff;">
+            <strong>Sign Agreement</strong>
+            <div>
+              <button id="sig-full-save" class="btn btn-primary btn-sm" type="button">Save</button>
+              <button id="sig-full-cancel" class="btn btn-outline-secondary btn-sm" type="button">Cancel</button>
+            </div>
+          </div>
+          <div style="padding:1rem;">
+            <canvas id="sig-canvas-full" width="820" height="260" style="width:100%;height:260px;background:#fff;border:1px solid #e9ecef;border-radius:8px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Typed name (fallback)</label>
+        <input id="signature-text" name="signature_text" class="form-control" placeholder="Type your full name here" />
+      </div>
+
+      <input type="hidden" name="signature_data" id="signature-data" />
+      <input type="hidden" name="terms_version" value="v2026-01-24" />
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary" id="agree-submit">Sign & Submit</button>
+        <a class="btn btn-outline-secondary" href="{% url 'loan_agreement' loan.id %}">Open Agreement</a>
+      </div>
+    </form>
+    </div>
+  {% endblock %}
+
+  {% block extra_scripts %}
+  {{ block.super }}
+  <script>
+  (function(){
+    const canvas = document.getElementById('sig-canvas');
+    const hint = document.getElementById('sig-hint');
+    const ctx = canvas.getContext('2d');
+    const undoBtn = document.getElementById('sig-undo');
+    const clearBtn = document.getElementById('sig-clear');
+    const fillBtn = document.getElementById('sig-fill');
+    const sizeSel = document.getElementById('sig-size');
+    let drawing = false;
+    let strokes = []; // array of {points: [{x,y}], width, color, type:'stroke'|'text', text?:string}
+    let currentStroke = null;
+
+    function setPixelRatio(){
+      const ratio = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      canvas.width = Math.floor(w * ratio);
+      canvas.height = Math.floor(h * ratio);
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(ratio,0,0,ratio,0,0);
+      redraw();
+    }
+
+    window.addEventListener('resize', setPixelRatio);
+    setPixelRatio();
+
+    function getPos(e){
+      const rect = canvas.getBoundingClientRect();
+      const t = e.changedTouches ? e.changedTouches[0] : e;
+      return {x: t.clientX - rect.left, y: t.clientY - rect.top};
+    }
+
+    function start(e){
+      e.preventDefault();
+      drawing = true;
+      const p = getPos(e);
+      currentStroke = {points:[p], width: parseInt(sizeSel.value||2,10), color:'#0d6efd', type:'stroke'};
+    }
+    function move(e){
+      if(!drawing || !currentStroke) return;
+      e.preventDefault();
+      const p = getPos(e);
+      currentStroke.points.push(p);
+      drawLastSegment(currentStroke);
+    }
+    function end(e){
+      if(!drawing) return;
+      drawing = false;
+      if(currentStroke){
+        strokes.push(currentStroke);
+        currentStroke = null;
+      }
+      updateHint();
+    }
+
+    function drawStroke(s){
+      if(s.type === 'text'){
+        ctx.save();
+        ctx.fillStyle = s.color || '#0d6efd';
+        ctx.font = (24 + (s.width||2)*2) + 'px "Segoe UI", Roboto, sans-serif';
+        ctx.textBaseline = 'middle';
+        const x = canvas.clientWidth/2;
+        const y = canvas.clientHeight/2;
+        ctx.textAlign = 'center';
+        ctx.fillText(s.text, x, y);
+        ctx.restore();
+        return;
+      }
+      if(s.type === 'image'){
+        // if image element available, draw it; otherwise create and load
+        if(s.img && s.img.complete){
+          // center the image
+          const mw = canvas.clientWidth, mh = canvas.clientHeight;
+          const iw = s.img.width / (window.devicePixelRatio || 1);
+          const ih = s.img.height / (window.devicePixelRatio || 1);
+          const scale = Math.min(mw/iw, mh/ih, 1);
+          const dw = iw * scale; const dh = ih * scale;
+          const dx = (mw - dw)/2; const dy = (mh - dh)/2;
+          ctx.drawImage(s.img, dx, dy, dw, dh);
+        } else if(s.dataUrl){
+          s.img = new Image();
+          s.img.onload = function(){ redraw(); };
+          s.img.src = s.dataUrl;
+        }
+        return;
+      }
+      const pts = s.points;
+      if(!pts || pts.length===0) return;
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = s.color || '#0d6efd';
+      ctx.lineWidth = s.width || 2;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for(let i=1;i<pts.length;i++){
+        const p = pts[i];
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawLastSegment(s){
+      // incremental draw: redraw whole canvas for simplicity
+      redraw();
+    }
+
+    function redraw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(const s of strokes){ drawStroke(s); }
+      if(currentStroke) drawStroke(currentStroke);
+      updateHint();
+    }
+
+    function updateHint(){
+      const blank = strokes.length === 0 && !currentStroke;
+      hint.style.display = blank ? 'flex' : 'none';
+    }
+
+    // Small canvas no longer supports inline drawing — tapping opens fullscreen signer
+    canvas.addEventListener('click', function(e){ e.preventDefault(); openFull(); });
+    canvas.addEventListener('touchstart', function(e){ e.preventDefault(); openFull(); }, {passive:false});
+
+    undoBtn.addEventListener('click', function(){ if(strokes.length) strokes.pop(); redraw(); });
+    clearBtn.addEventListener('click', function(){ strokes = []; currentStroke = null; document.getElementById('signature-text').value=''; redraw(); });
+    fillBtn.addEventListener('click', function(){ const name = prompt('Type your full name to render as a signature:') || ''; if(!name) return; // push as text-stroke so undo works
+      const s = {type:'text', text: name, width: parseInt(sizeSel.value||2,10), color:'#0d6efd'}; strokes.push(s); redraw(); document.getElementById('signature-text').value = name; });
+
+    document.getElementById('agreement-form').addEventListener('submit', function(ev){
+      // prefer canvas strokes if any
+      if(strokes.length === 0){
+        const txt = document.getElementById('signature-text').value.trim();
+        if(!txt){ ev.preventDefault(); alert('Please draw your signature or type your full name as a fallback.'); return false; }
+        document.getElementById('signature-data').value = '';
+      } else {
+        // export to data URL
+        try{
+          const dataUrl = canvas.toDataURL('image/png');
+          document.getElementById('signature-data').value = dataUrl;
+        }catch(e){ document.getElementById('signature-data').value = ''; }
+      }
+    });
+
+    // Fullscreen modal signing: open when user presses Space on the typed-name input
+    const sigText = document.getElementById('signature-text');
+    const fullModal = document.getElementById('sig-fullscreen');
+    const fullCanvas = document.getElementById('sig-canvas-full');
+    const fullCtx = fullCanvas.getContext('2d');
+    const fullSave = document.getElementById('sig-full-save');
+    const fullCancel = document.getElementById('sig-full-cancel');
+
+    function openFull(){
+      fullModal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      // clear full canvas and set pixel ratio
+      const ratio = window.devicePixelRatio || 1;
+      const w = fullCanvas.clientWidth;
+      const h = fullCanvas.clientHeight;
+      fullCanvas.width = Math.floor(w * ratio);
+      fullCanvas.height = Math.floor(h * ratio);
+      fullCanvas.style.width = w + 'px';
+      fullCanvas.style.height = h + 'px';
+      fullCtx.setTransform(ratio,0,0,ratio,0,0);
+      fullCtx.clearRect(0,0,fullCanvas.width,fullCanvas.height);
+      // if main canvas has content, draw a faint guide (optional)
+    }
+
+    function closeFull(){
+      fullModal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    // Fullscreen drawing: record vector strokes (so they remain editable)
+    let fDrawing=false; let fLast=null; let fCurrent=null; let fStrokes=[];
+    function fGetPos(e){ const rect = fullCanvas.getBoundingClientRect(); const t = e.changedTouches ? e.changedTouches[0] : e; return {x: t.clientX - rect.left, y: t.clientY - rect.top}; }
+    function fStart(e){ e.preventDefault(); fDrawing=true; const p=fGetPos(e); fCurrent = {points:[p], width: Math.max(2, parseInt(sizeSel.value||2,10)*1.5), color:'#0d6efd', type:'stroke'}; fLast = p; }
+    function fMove(e){ if(!fDrawing || !fCurrent) return; e.preventDefault(); const p=fGetPos(e); fCurrent.points.push(p); fullCtx.lineWidth = fCurrent.width; fullCtx.lineCap='round'; fullCtx.lineJoin='round'; fullCtx.strokeStyle=fCurrent.color; fullCtx.beginPath(); fullCtx.moveTo(fLast.x,fLast.y); fullCtx.lineTo(p.x,p.y); fullCtx.stroke(); fLast=p; }
+    function fEnd(){ if(!fDrawing) return; fDrawing=false; if(fCurrent){ fStrokes.push(fCurrent); fCurrent=null; } fLast=null; }
+
+    fullCanvas.addEventListener('mousedown', fStart); fullCanvas.addEventListener('touchstart', fStart, {passive:false});
+    window.addEventListener('mousemove', fMove); window.addEventListener('touchmove', fMove, {passive:false});
+    window.addEventListener('mouseup', fEnd); window.addEventListener('touchend', fEnd);
+
+    // Save: convert fullscreen vector strokes into main-canvas vector strokes (scaled), so they are undoable
+    fullSave.addEventListener('click', function(){
+      try{
+        if(fStrokes.length === 0) {
+          // nothing drawn — treat as typed-name fallback
+        } else {
+          const mw = canvas.clientWidth; const mh = canvas.clientHeight;
+          const fw = fullCanvas.clientWidth; const fh = fullCanvas.clientHeight;
+          const sx = mw / fw; const sy = mh / fh; const s = Math.min(sx, sy);
+          for(const fs of fStrokes){
+            // transform points
+            const pts = fs.points.map(p => ({ x: p.x * (mw / fw), y: p.y * (mh / fh) }));
+            strokes.push({ type: 'stroke', points: pts, width: Math.max(1, Math.round(fs.width * (mw / fw))), color: fs.color });
+          }
+        }
+      }catch(e){ console.error('fullSave error', e); }
+      // clear modal state
+      fStrokes = []; fCurrent = null; fullCtx.clearRect(0,0,fullCanvas.width,fullCanvas.height);
+      // also set typed name into input if empty
+      if(!sigText.value.trim()) sigText.value = '';
+      closeFull();
+      redraw();
+    });
+
+    fullCancel.addEventListener('click', function(){ closeFull(); });
+
+    // open on Space key while focused in typed-name input
+    sigText.addEventListener('keydown', function(ev){
+      if(ev.key === ' ' || ev.code === 'Space'){ ev.preventDefault(); openFull(); }
+    });
+  })();
+  </script>
+{% endblock %}

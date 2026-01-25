@@ -129,6 +129,11 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Media files (user uploads, signatures)
+# MEDIA_URL is the public URL prefix, MEDIA_ROOT is the filesystem path where files are saved.
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
 # Branding / marketing content
 ORG_DISPLAY_NAME = os.getenv('ORG_DISPLAY_NAME', '3rdgenloan')

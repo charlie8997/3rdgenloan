@@ -13,4 +13,8 @@ urlpatterns = [
     path('loan/apply/', views.loan_application, name='loan_application'),
     path('loan/dashboard/', views.loan_dashboard, name='loan_dashboard'),
     path('withdrawal/request/', views.withdrawal_request, name='withdrawal_request'),
+    path('terms/', views.terms, name='terms'),
+    path('loan/<int:loan_id>/agreement/', views.loan_agreement, name='loan_agreement'),
+    path('loan/agreement/<int:agreement_id>/download/', views.agreement_download, name='agreement_download'),
+    path('loan/agreement/<int:agreement_id>/view/', views.agreement_view, name='agreement_view'),
 ]

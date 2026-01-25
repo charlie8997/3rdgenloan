@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="text-center mb-4">
+    <h1 class="fw-bold">Signed Agreement</h1>
+    <p class="text-muted">Read-only view of your saved agreement.</p>
+  </div>
+
+  <div class="card-panel">
+    <p class="mb-1"><strong>Borrower:</strong> {{ agreement.borrower_name }}</p>
+    <p class="mb-1"><strong>Requested amount:</strong> ${{ agreement.requested_amount }}</p>
+    <p class="mb-1"><strong>Account (last4):</strong> ****{{ agreement.account_last4 }}</p>
+    <p class="mb-3"><strong>Signed at:</strong> {{ agreement.signed_at }}</p>
+
+    {% if agreement.signature_image %}
+      <div class="mb-3 text-center">
+        <img src="{{ agreement.signature_image.url }}" alt="Signature" style="max-width:420px;border:1px solid #eef2ff;padding:8px;border-radius:8px;"/>
+      </div>
+    {% elif agreement.signature_text %}
+      <div class="mb-3 text-center">
+        <p class="fst-italic">Signed (typed): {{ agreement.signature_text }}</p>
+      </div>
+    {% else %}
+      <p class="text-muted">No signature image or typed signature recorded.</p>
+    {% endif %}
+
+    <div class="d-flex justify-content-between mt-3">
+      <a class="btn btn-outline-secondary" href="{% url 'loan_dashboard' %}">Back to dashboard</a>
+      {% if request.user.is_staff %}
+        <a class="btn btn-primary" href="{% url 'agreement_download' agreement.id %}">Download</a>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

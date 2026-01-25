@@ -144,6 +144,25 @@ class Profile(models.Model):
 	def __str__(self):
 		return f"Profile for {self.user.email}"
 
+
+# Signed agreement record for loans
+class LoanAgreement(models.Model):
+	loan = models.ForeignKey('Loan', on_delete=models.CASCADE, related_name='agreements')
+	user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='agreements')
+	borrower_name = models.CharField(max_length=255)
+	requested_amount = models.DecimalField(max_digits=12, decimal_places=2)
+	account_last4 = models.CharField(max_length=8, blank=True, default='')
+	signature_image = models.ImageField(upload_to='agreements/signatures/', null=True, blank=True)
+	signature_text = models.CharField(max_length=255, blank=True)
+	signed_at = models.DateTimeField(null=True, blank=True)
+	ip_address = models.GenericIPAddressField(null=True, blank=True)
+	user_agent = models.TextField(blank=True)
+	terms_version = models.CharField(max_length=64, blank=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	def __str__(self):
+		return f"Agreement {self.id} for Loan {self.loan_id} by {self.user.email}"
+
 # Bank details model
 class BankDetail(models.Model):
 	user = models.OneToOneField('User', on_delete=models.CASCADE, related_name='bank_detail')

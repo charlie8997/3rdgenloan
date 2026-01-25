@@ -1,6 +1,4 @@
-<<<<<<< HEAD
 # 3rdgenloan
-=======
 # Loan Management System
 
 A Django + Supabase (PostgreSQL) web application for managing loan applications, approvals, balances, and withdrawals (request-only, no payments).
@@ -51,6 +49,35 @@ A Django + Supabase (PostgreSQL) web application for managing loan applications,
 - Set environment variables for `SECRET_KEY`, `DATABASE_URL`, and `DJANGO_ALLOWED_HOSTS` in production.
 - Deploy to Fly.io or your preferred platform.
 
+## WeasyPrint (PDF generation)
+
+WeasyPrint requires native system libraries in addition to the Python package. Install the OS packages below on Debian/Ubuntu-based images or hosts before installing Python dependencies.
+
+Debian / Ubuntu (apt)
+
+```bash
+# Install required system packages
+sudo apt update && sudo apt install -y \
+   build-essential \
+   libcairo2 libpango-1.0-0 libgdk-pixbuf2.0-0 libffi-dev \
+   libjpeg-dev libpng-dev libpangocairo-1.0-0 \
+   fonts-dejavu-core fonts-liberation fonts-noto-core
+
+# Then install the Python dependency
+pip install -r requirements.txt
+```
+
+Docker (Debian-based image) snippet — add to your `Dockerfile` before `pip install`:
+
+```dockerfile
+RUN apt-get update && apt-get install -y \
+      libcairo2 libpango-1.0-0 libgdk-pixbuf2.0-0 libffi-dev \
+      libjpeg-dev zlib1g-dev fonts-dejavu-core fonts-liberation pkg-config \
+      && rm -rf /var/lib/apt/lists/*
+```
+
+If PDF generation fails in production, our code already logs the WeasyPrint exception and falls back to an HTML response. Use `scripts/check_weasyprint.sh` to verify the runtime environment and `pkg-config` probes.
+
 ## Security
 - No payments or bank APIs
 - All money movement is manual and office-controlled
@@ -59,4 +86,3 @@ A Django + Supabase (PostgreSQL) web application for managing loan applications,
 
 ## License
 MIT
->>>>>>> eae7749 (Initial Commit)

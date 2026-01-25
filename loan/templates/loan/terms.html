@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="text-center mb-4">
+    <h1 class="fw-bold">Terms & Agreement</h1>
+    <p class="text-muted">Effective date: 24 January 2026</p>
+  </div>
+
+  <div class="card-panel">
+    <p class="lead">Welcome, these Terms & Agreement govern your use of 3rd Gen Loans and describe the relationship between you and 3rd Gen Loans, LLC.</p>
+
+    <p class="text-muted small">Effective date: 20 March 2010. Please read these Terms carefully before using our services. By using the service, you agree to these Terms.</p>
+
+    <h5 class="mt-4">Quick summary</h5>
+    <ul>
+      <li>Clear pricing and fees are presented during application and in your loan documents.</li>
+      <li>Applications are subject to underwriting and eligibility checks.</li>
+      <li>Refer to our Privacy Policy for details on how we handle your personal data.</li>
+    </ul>
+
+    <h5 class="mt-4">Terms</h5>
+    <p class="text-muted small">This page provides a clear, readable summary of key terms. The full, legally binding loan agreement will be provided at the time of approval and must be accepted to receive funds.</p>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">1. Definitions</h6>
+      <p class="text-muted small">"Company", "we", or "us" refers to 3rd Gen Loans, LLC. "You" or "Borrower" refers to the person using the service. "Loan" means any financing product offered through our platform.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">2. Acceptance of Terms</h6>
+      <p class="text-muted small">By registering for an account, using the service, or completing an application, you agree to be bound by these Terms and any updates we post. If you do not agree, do not use the service.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">3. Eligibility</h6>
+      <p class="text-muted small">You must be a legal resident of the jurisdiction where we operate, be at least 18 years old, and provide accurate and complete information during registration and profile completion. Providing false information may result in application denial or account suspension.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">4. Loan Applications & Underwriting</h6>
+      <p class="text-muted small">All loan applications are subject to credit, identity and affordability checks. Submission of an application does not guarantee approval. We may verify information with third parties and request documentation to support your application.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">5. Pricing, Fees & Repayments</h6>
+      <p class="text-muted small">All pricing, interest, and fees will be disclosed to you before you accept any loan offer. Your repayment schedule, total amount due, and payment amounts will be included in the loan agreement. Late payments may incur fees and may affect your credit record where applicable.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">6. Disbursement</h6>
+      <p class="text-muted small">Approved funds will be disbursed to your verified bank account as set out in your loan documents. Disbursement timing may vary depending on banking partners and compliance checks.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">7. Repayment Obligations</h6>
+      <p class="text-muted small">You agree to make all payments when due according to the repayment schedule in your loan agreement. If you fail to make payments, we may pursue remedies including late fees, collections, and legal action, subject to applicable law.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">8. Default & Remedies</h6>
+      <p class="text-muted small">If you default on your obligations under the loan, we may declare your loan in default and pursue remedies allowed by the loan agreement and applicable law. Remedies may include acceleration of amounts due, reporting to credit agencies, collection activity, and legal proceedings.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">9. Representations & Warranties</h6>
+      <p class="text-muted small">By submitting an application you represent that the information you provide is true, complete and accurate, and that you have authority to enter into the agreement.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">10. Privacy</h6>
+      <p class="text-muted small">We process personal data in accordance with our Privacy Policy. The Privacy Policy explains how we collect, use, share, and protect your information. Please review it carefully before using our services.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">11. Changes to Terms</h6>
+      <p class="text-muted small">We may update these Terms from time to time. We will post the updated Terms and indicate the effective date. Continued use of the service after changes indicates acceptance of the updated Terms.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">12. Governing Law & Dispute Resolution</h6>
+      <p class="text-muted small">These Terms are governed by the laws of the state in which the Company is organized, except where local laws require otherwise. Any disputes arising under these Terms will be resolved in the courts specified in your loan agreement.</p>
+    </section>
+
+    <section class="mt-3">
+      <h6 class="fw-semibold">13. Contact</h6>
+      <p class="text-muted small">If you have questions about these Terms, contact support at admin@3rdgenloan.example (replace with production contact) or use the in-app support channels.</p>
+    </section>
+
+    <div class="mt-4 d-flex gap-3">
+      {% if request.user.is_authenticated %}
+        {% with loan=request.user.loans.all|first %}
+          {% if loan %}
+            <a class="btn btn-primary" href="{% url 'loan_agreement' loan.id %}">Open Agreement</a>
+          {% else %}
+            <a class="btn btn-primary" href="{% url 'loan_application' %}">Apply for a loan</a>
+          {% endif %}
+        {% endwith %}
+      {% else %}
+        <a class="btn btn-primary" href="{% url 'login' %}">Sign in to open agreement</a>
+      {% endif %}
+      <a class="btn btn-outline-secondary" href="/">Continue to app</a>
+    </div>
+  </div>
+
+{% endblock %}

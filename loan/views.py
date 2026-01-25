@@ -15,6 +15,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse, FileResponse
 from django.db import transaction, IntegrityError
 from django.template.loader import render_to_string
 from django.templatetags.static import static
@@ -33,6 +34,9 @@ from .forms import (
 	InviteEmailForm,
 )
 from .models import Loan, BankDetail, Profile, User, WithdrawalRequest
+from .models import LoanAgreement
+from django.core.files.base import ContentFile
+import base64, os
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +134,125 @@ def loan_application(request):
 		form = LoanForm()
 	return render(request, 'loan/loan_application.html', {'form': form})
 
+
+@login_required
+def loan_agreement(request, loan_id):
+	# Show agreement for a specific loan and allow borrower to sign (drawn + typed fallback)
+	loan = get_object_or_404(Loan, pk=loan_id)
+	if loan.user != request.user:
+		return redirect('loan_dashboard')
+
+	# Prefill values
+	borrower_name = request.user.full_name
+	requested_amount = loan.requested_amount
+	account_last4 = ''
+	try:
+		account_last4 = request.user.bank_detail.account_number[-4:]
+	except Exception:
+		account_last4 = ''
+
+	existing = LoanAgreement.objects.filter(loan=loan, user=request.user).order_by('-created_at').first()
+
+	if request.method == 'POST':
+		sig_data = request.POST.get('signature_data', '')
+		sig_text = request.POST.get('signature_text', '').strip()
+		terms_version = request.POST.get('terms_version', 'v2026-01-24')
+
+		agreement = LoanAgreement(
+			loan=loan,
+			user=request.user,
+			borrower_name=borrower_name,
+			requested_amount=requested_amount,
+			account_last4=account_last4,
+			signature_text=sig_text,
+			signed_at=timezone.now(),
+			ip_address=request.META.get('REMOTE_ADDR'),
+			user_agent=request.META.get('HTTP_USER_AGENT', '')[:1000],
+			terms_version=terms_version,
+		)
+		agreement.save()
+
+		# handle drawn signature (data URL)
+		if sig_data and sig_data.startswith('data:'):
+			header, b64 = sig_data.split(',', 1)
+			try:
+				data = base64.b64decode(b64)
+				filename = f"agreement_sig_{agreement.id}.png"
+				agreement.signature_image.save(filename, ContentFile(data), save=True)
+			except Exception:
+				pass
+
+		# if only typed name provided, keep signature_text
+
+		agreement.save()
+
+		return render(request, 'loan/agreement_submitted.html', {'agreement': agreement})
+
+	return render(request, 'loan/agreement.html', {
+		'loan': loan,
+		'borrower_name': borrower_name,
+		'requested_amount': requested_amount,
+		'account_last4': account_last4,
+		'existing': existing,
+	})
+
+
+@login_required
+def agreement_download(request, agreement_id):
+	ag = get_object_or_404(LoanAgreement, pk=agreement_id)
+	if ag.user != request.user:
+		return redirect('loan_dashboard')
+	# Build simple HTML with embedded signature (base64) for download
+	signature_data_uri = ''
+	if ag.signature_image and hasattr(ag.signature_image, 'path') and os.path.exists(ag.signature_image.path):
+		with open(ag.signature_image.path, 'rb') as f:
+			b = f.read()
+			signature_data_uri = 'data:image/png;base64,' + base64.b64encode(b).decode('ascii')
+
+	html = f'''<!doctype html>
+<html><head><meta charset="utf-8"><title>Agreement-{ag.id}</title></head><body>
+<h2>Signed Agreement</h2>
+<p>Borrower: {ag.borrower_name}</p>
+<p>Requested amount: ${ag.requested_amount}</p>
+<p>Account (last4): {ag.account_last4}</p>
+<p>Signed at: {ag.signed_at}</p>
+<p>Signature:</p>
+{('<img src="'+signature_data_uri+'"/>') if signature_data_uri else ('<p>'+ (ag.signature_text or '---') +'</p>')}
+</body></html>'''
+
+	# Try to render PDF via WeasyPrint if available; otherwise fall back to HTML attachment
+	try:
+		from weasyprint import HTML, CSS  # type: ignore
+	except Exception:
+		HTML = None
+
+	if HTML:
+		try:
+			# Use WeasyPrint to render PDF from the HTML string
+			pdf = HTML(string=html).write_pdf()
+			resp = HttpResponse(pdf, content_type='application/pdf')
+			resp['Content-Disposition'] = f'attachment; filename="agreement-{ag.id}.pdf"'
+			return resp
+		except Exception:
+			# if PDF generation fails, fall back to HTML
+			logger.exception('WeasyPrint PDF generation failed for agreement %s', ag.id)
+
+	resp = HttpResponse(html, content_type='text/html')
+	resp['Content-Disposition'] = f'attachment; filename="agreement-{ag.id}.html"'
+	return resp
+
+
+@login_required
+def agreement_view(request, agreement_id):
+	"""Read-only viewer for a saved LoanAgreement.
+
+	Access is allowed for the agreement owner or staff users.
+	"""
+	ag = get_object_or_404(LoanAgreement, pk=agreement_id)
+	if ag.user != request.user and not request.user.is_staff:
+		return redirect('loan_dashboard')
+	return render(request, 'loan/agreement_view.html', {'agreement': ag})
+
 def register(request):
 	if request.method == 'POST':
 		form = UserRegistrationForm(request.POST)
@@ -190,6 +313,11 @@ def user_login(request):
 def user_logout(request):
 	logout(request)
 	return redirect('login')
+
+
+def terms(request):
+	"""Public Terms & Agreement page (non-enforced)."""
+	return render(request, 'loan/terms.html')
 
 @login_required
 def profile_complete(request):

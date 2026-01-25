@@ -1,4 +1,5 @@
 *.pyc
 .env
 .env.*
-!*.example
+# Media uploads
+media/

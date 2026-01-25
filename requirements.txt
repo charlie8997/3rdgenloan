@@ -1,10 +1,14 @@
+aiosmtpd==1.4.6
 asgiref==3.11.0
+atpublic==7.0.0
+attrs==25.4.0
 dj-database-url==3.1.0
 Django==6.0.1
+gunicorn==20.1.0
+pillow==12.1.0
 psycopg2-binary==2.9.11
 python-dotenv==1.2.1
+setuptools==80.9.0
 sqlparse==0.5.5
-
-# Production WSGI server and static file handler
-gunicorn==20.1.0
 whitenoise==6.4.0
+weasyprint==59.0
