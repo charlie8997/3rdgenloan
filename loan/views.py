@@ -291,7 +291,7 @@ def verify_email(request, uidb64, token):
 			user.is_active = True
 			user.save(update_fields=['email_verified', 'email_verified_at', 'is_active'])
 		messages.success(request, 'Email verified. You can now sign in.')
-		return redirect('login')
+		return redirect(getattr(settings, 'LOGIN_URL', '/login/'))
 	messages.error(request, 'Verification link is invalid or has expired. Please request a new link or register again.')
 	return redirect('register')
 
@@ -316,7 +316,7 @@ def user_login(request):
 
 def user_logout(request):
 	logout(request)
-	return redirect('login')
+	return redirect(getattr(settings, 'LOGIN_URL', '/login/'))
 
 
 def terms(request):

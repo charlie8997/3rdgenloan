@@ -76,6 +76,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.site_settings',
             ],
         },
     },
@@ -139,3 +140,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 ORG_DISPLAY_NAME = os.getenv('ORG_DISPLAY_NAME', '3rdgenloan')
 INVITE_SENDER_NAME = os.getenv('INVITE_SENDER_NAME', ORG_DISPLAY_NAME)
 INVITE_BANNER_URL = os.getenv('INVITE_BANNER_URL')
+
+# Authentication redirect settings — use site paths rather than Django defaults
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/loan/dashboard/'
+LOGOUT_REDIRECT_URL = '/login/'
