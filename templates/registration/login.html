@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <script>
+    // Redirect to the project's custom login page
+    window.location.href = "{% url 'login' %}";
+  </script>
+  <noscript>
+    <p>JavaScript is required to redirect to the login page. <a href="{% url 'login' %}">Click here to continue</a>.</p>
+  </noscript>
+{% endblock %}

@@ -26,6 +26,8 @@ urlpatterns = [
     path('admin/invite/', send_invite, name='send_invite'),
     path('admin/', admin.site.urls),
     path('', include('loan.urls')),
+    # Built-in auth views: password reset, login/logout helpers
+    path('accounts/', include('django.contrib.auth.urls')),
 ]
 
 # Custom error handlers
