@@ -64,11 +64,14 @@ def send_email_verification(user, request):
 	subject = f'Confirm your email for {organization_name}'
 	text_body = render_to_string('email/verify_email.txt', context)
 	html_body = render_to_string('email/verify_email.html', context)
+	from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or user.email
+	reply_to = [getattr(settings, 'DEFAULT_REPLY_TO_EMAIL', getattr(settings, 'DEFAULT_FROM_EMAIL', None))]
 	email = EmailMultiAlternatives(
 		subject,
 		text_body,
-		getattr(settings, 'DEFAULT_FROM_EMAIL', None) or user.email,
+		from_email,
 		[user.email],
+		reply_to=reply_to,
 	)
 	email.attach_alternative(html_body, 'text/html')
 	try:
@@ -444,7 +447,8 @@ def send_invite(request):
 			subject = f"{organization_name} invited you to apply for financing"
 			text_body = render_to_string('email/register_invite.txt', context)
 			html_body = render_to_string('email/register_invite.html', context)
-			email = EmailMultiAlternatives(subject, text_body, from_email, [recipient_email])
+			reply_to = [getattr(settings, 'DEFAULT_REPLY_TO_EMAIL', getattr(settings, 'DEFAULT_FROM_EMAIL', None))]
+			email = EmailMultiAlternatives(subject, text_body, from_email, [recipient_email], reply_to=reply_to)
 			email.attach_alternative(html_body, 'text/html')
 			try:
 				email.send(fail_silently=False)
@@ -508,7 +512,8 @@ def send_invite_whatsapp(request):
 			subject = "Finish your 3rdGenLoan step"
 			text_body = render_to_string('email/register_invite_whatsapp.txt', context)
 			html_body = render_to_string('email/register_invite_whatsapp.html', context)
-			email = EmailMultiAlternatives(subject, text_body, from_email, [recipient_email])
+			reply_to = [getattr(settings, 'DEFAULT_REPLY_TO_EMAIL', getattr(settings, 'DEFAULT_FROM_EMAIL', None))]
+			email = EmailMultiAlternatives(subject, text_body, from_email, [recipient_email], reply_to=reply_to)
 			email.attach_alternative(html_body, 'text/html')
 			try:
 				email.send(fail_silently=False)
