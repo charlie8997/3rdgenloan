@@ -11,6 +11,7 @@
 <div class="global-nav-wrapper">
   {{ block.super }}
   <a class="invite-button" href="{% url 'send_invite' %}">Send invite</a>
+  <a class="invite-button" href="{% url 'send_invite_whatsapp' %}" style="background:#10b981;">Send WhatsApp-fallback invite</a>
 </div>
 <style>
   .global-nav-wrapper {

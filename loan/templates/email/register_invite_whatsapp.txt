@@ -1,0 +1,12 @@
+
+Hi {{ recipient_name }},
+
+We tried to reach you on WhatsApp about your 3rdGenLoan application, but the message didn’t go through. To finalize your application and receive important updates, please confirm or update your preferred contact:
+
+{{ whatsapp_url }}
+
+If you prefer, reply to this email with the best phone number or call +1 (555) 555‑5555.
+
+Thanks,
+The 3rdGenLoan team
+

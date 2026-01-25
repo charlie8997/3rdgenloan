@@ -20,10 +20,11 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from loan.views import send_invite
+from loan.views import send_invite, send_invite_whatsapp
 
 urlpatterns = [
     path('admin/invite/', send_invite, name='send_invite'),
+    path('admin/invite-whatsapp/', send_invite_whatsapp, name='send_invite_whatsapp'),
     path('admin/', admin.site.urls),
     path('', include('loan.urls')),
     # Built-in auth views: password reset, login/logout helpers

@@ -33,6 +33,7 @@ from .forms import (
 	WithdrawalRequestForm,
 	InviteEmailForm,
 )
+from .forms_whatsapp import InviteWhatsAppForm
 from .models import Loan, BankDetail, Profile, User, WithdrawalRequest
 from .models import LoanAgreement
 from django.core.files.base import ContentFile
@@ -476,6 +477,70 @@ def send_invite(request):
 		form = InviteEmailForm()
 
 	return render(request, 'loan/send_invite.html', {'form': form})
+
+
+@login_required
+def send_invite_whatsapp(request):
+	if not request.user.is_staff:
+		raise PermissionDenied('Only administrators can send invitations.')
+
+	if request.method == 'POST':
+		form = InviteWhatsAppForm(request.POST)
+		if form.is_valid():
+			recipient_name = form.cleaned_data['recipient_name']
+			recipient_email = form.cleaned_data['recipient_email']
+			whatsapp_url = form.cleaned_data['whatsapp_url']
+			note = form.cleaned_data.get('personalized_note', '')
+			organization_name = getattr(settings, 'ORG_DISPLAY_NAME', '3rdgenloan')
+			default_inviter = getattr(settings, 'INVITE_SENDER_NAME', organization_name)
+			inviter_name = form.cleaned_data['inviter_name'].strip() or default_inviter
+			from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', request.user.email)
+			banner_url = getattr(settings, 'INVITE_BANNER_URL', None) or request.build_absolute_uri(static('email_banner.jpg'))
+			context = {
+				'inviter_name': inviter_name,
+				'recipient_name': recipient_name,
+				'personalized_note': note,
+				'register_url': whatsapp_url,
+				'whatsapp_url': whatsapp_url,
+				'organization_name': organization_name,
+				'banner_url': banner_url,
+			}
+			subject = "Finish your 3rdGenLoan step"
+			text_body = render_to_string('email/register_invite_whatsapp.txt', context)
+			html_body = render_to_string('email/register_invite_whatsapp.html', context)
+			email = EmailMultiAlternatives(subject, text_body, from_email, [recipient_email])
+			email.attach_alternative(html_body, 'text/html')
+			try:
+				email.send(fail_silently=False)
+			except (SMTPException, OSError) as exc:
+				logger.exception('WhatsApp-fallback invite email failed: %s', exc)
+				console_backend_path = 'django.core.mail.backends.console.EmailBackend'
+				if settings.DEBUG:
+					active_backend = getattr(settings, 'EMAIL_BACKEND', '')
+					if active_backend != console_backend_path:
+						logger.info('Falling back to console email backend for invite preview.')
+						try:
+							email.connection = get_connection(console_backend_path)
+							email.send(fail_silently=False)
+						except Exception as console_exc:
+							logger.exception('Console email fallback failed: %s', console_exc)
+						else:
+							messages.warning(
+								request,
+								"SMTP is unreachable, so the invite was dumped to the Django console output instead.",
+							)
+							return redirect('send_invite_whatsapp')
+				messages.error(
+					request,
+					"We couldn't reach the email server. Please verify SMTP settings or try again later.",
+				)
+			else:
+				messages.success(request, f'WhatsApp-fallback invite sent to {recipient_email}.')
+				return redirect('send_invite_whatsapp')
+	else:
+		form = InviteWhatsAppForm()
+
+	return render(request, 'loan/send_invite_whatsapp.html', {'form': form})
 
 
 def custom_404(request, exception):
